@@ -1,34 +1,145 @@
 import { Match, ThrowAction, EndRound } from '../types';
-import { createDemoMatch } from './demoData';
+import {
+  getDefaultMatches,
+  createDemoMatch,
+  createTripleMenMatch,
+  createMixedTripleMatch,
+} from './demoData';
 
-const LOCAL_STORAGE_KEY = 'rasta_petanque_active_match';
+const ALL_MATCHES_STORAGE_KEY = 'rasta_petanque_all_matches_v2';
+const ACTIVE_MATCH_ID_KEY = 'rasta_petanque_active_match_id_v2';
+const LEGACY_STORAGE_KEY = 'rasta_petanque_active_match';
+
+/**
+ * Reads matches from localStorage.
+ * Guarantees that the 3 canonical research & demo matches are always present:
+ * 1. Tabel 1.1 Triple Men (20 Okt 2025)
+ * 2. Mixed Triple (26 Okt 2025)
+ * 3. SEA Games 2025 Final (Men Triples)
+ */
+export function getStoredMatches(): Match[] {
+  const defaultMatches = getDefaultMatches();
+  try {
+    const raw = localStorage.getItem(ALL_MATCHES_STORAGE_KEY);
+    let list: Match[] = [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        list = parsed;
+      }
+    }
+
+    // Check legacy storage if present
+    if (list.length === 0) {
+      const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacyRaw) {
+        try {
+          const legacyMatch = JSON.parse(legacyRaw);
+          if (legacyMatch && legacyMatch.id) {
+            list.push(legacyMatch);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // Always ensure all default research matches exist in the array
+    const existingIds = new Set(list.map((m) => m.id));
+    let updated = false;
+
+    // Put default matches in standard order if not present
+    for (const def of defaultMatches) {
+      if (!existingIds.has(def.id)) {
+        list.push(def);
+        updated = true;
+      }
+    }
+
+    if (updated || !raw) {
+      localStorage.setItem(ALL_MATCHES_STORAGE_KEY, JSON.stringify(list));
+    }
+
+    return list;
+  } catch (err) {
+    console.warn('Error reading stored matches:', err);
+    return defaultMatches;
+  }
+}
+
+export function saveStoredMatches(matches: Match[]): void {
+  try {
+    localStorage.setItem(ALL_MATCHES_STORAGE_KEY, JSON.stringify(matches));
+  } catch (err) {
+    console.warn('Error saving stored matches:', err);
+  }
+}
+
+export function getActiveMatchId(): string {
+  try {
+    const id = localStorage.getItem(ACTIVE_MATCH_ID_KEY);
+    if (id) return id;
+  } catch {
+    // ignore
+  }
+  return 'match_triple_men_20okt';
+}
+
+export function setActiveMatchId(id: string): void {
+  try {
+    localStorage.setItem(ACTIVE_MATCH_ID_KEY, id);
+  } catch {
+    // ignore
+  }
+}
+
+function updateMatchInStorage(updatedMatch: Match): void {
+  const list = getStoredMatches();
+  const index = list.findIndex((m) => m.id === updatedMatch.id);
+  if (index >= 0) {
+    list[index] = updatedMatch;
+  } else {
+    list.unshift(updatedMatch);
+  }
+  saveStoredMatches(list);
+  setActiveMatchId(updatedMatch.id);
+}
 
 export async function fetchMatches(): Promise<Match[]> {
   try {
     const res = await fetch('/api/matches');
     if (res.ok) {
-      const data = await res.json();
-      return data;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          saveStoredMatches(data);
+          return data;
+        }
+      }
     }
   } catch (err) {
-    console.warn('Backend fetch failed, using local demo match:', err);
+    console.warn('Backend fetch failed, using local stored matches:', err);
   }
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  return [cached ? JSON.parse(cached) : createDemoMatch()];
+  return getStoredMatches();
 }
 
 export async function fetchMatchById(id: string): Promise<Match> {
   try {
     const res = await fetch(`/api/matches/${id}`);
     if (res.ok) {
-      const data = await res.json();
-      return data;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        return data;
+      }
     }
   } catch (err) {
     console.warn('Backend fetch failed, using local match:', err);
   }
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  return cached ? JSON.parse(cached) : createDemoMatch();
+  const list = getStoredMatches();
+  const match = list.find((m) => m.id === id);
+  return match || list[0] || createTripleMenMatch();
 }
 
 export async function createMatch(matchData: Partial<Match>): Promise<Match> {
@@ -39,9 +150,12 @@ export async function createMatch(matchData: Partial<Match>): Promise<Match> {
       body: JSON.stringify(matchData),
     });
     if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-      return data;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        updateMatchInStorage(data);
+        return data;
+      }
     }
   } catch (err) {
     console.warn('Backend create failed, saving locally:', err);
@@ -78,7 +192,7 @@ export async function createMatch(matchData: Partial<Match>): Promise<Match> {
     updatedAt: Date.now(),
   };
 
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newMatch));
+  updateMatchInStorage(newMatch);
   return newMatch;
 }
 
@@ -93,17 +207,21 @@ export async function recordAction(
       body: JSON.stringify(actionData),
     });
     if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.match));
-      return data;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        updateMatchInStorage(data.match);
+        return data;
+      }
     }
   } catch (err) {
     console.warn('Backend action record failed, using local update:', err);
   }
 
   // Local fallback
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  const match: Match = cached ? JSON.parse(cached) : createDemoMatch();
+  const list = getStoredMatches();
+  let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+
   const newAction: ThrowAction = {
     id: `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     matchId,
@@ -115,16 +233,23 @@ export async function recordAction(
     actionType: actionData.actionType!,
     distance: actionData.distance!,
     result: actionData.result!,
+    scoreValue: actionData.result === 'SUCCESS' ? 1 : 0,
+    bouleNumber: actionData.bouleNumber || 1,
     carreau: actionData.carreau,
     distanceToJackCm: actionData.distanceToJackCm,
+    pointingTechnique: actionData.pointingTechnique,
+    shootingTechnique: actionData.shootingTechnique,
     timestamp: Date.now(),
   };
-  match.actions.push(newAction);
-  match.updatedAt = Date.now();
-  if (actionData.distance) {
-    match.currentDistance = actionData.distance;
-  }
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
+
+  match = {
+    ...match,
+    actions: [...match.actions, newAction],
+    currentDistance: actionData.distance || match.currentDistance,
+    updatedAt: Date.now(),
+  };
+
+  updateMatchInStorage(match);
   return { action: newAction, match };
 }
 
@@ -134,19 +259,25 @@ export async function deleteAction(matchId: string, actionId: string): Promise<M
       method: 'DELETE',
     });
     if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.match));
-      return data.match;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        updateMatchInStorage(data.match);
+        return data.match;
+      }
     }
   } catch (err) {
     console.warn('Backend delete failed, fallback local:', err);
   }
 
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  const match: Match = cached ? JSON.parse(cached) : createDemoMatch();
-  match.actions = match.actions.filter((a) => a.id !== actionId);
-  match.updatedAt = Date.now();
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
+  const list = getStoredMatches();
+  let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+  match = {
+    ...match,
+    actions: match.actions.filter((a) => a.id !== actionId),
+    updatedAt: Date.now(),
+  };
+  updateMatchInStorage(match);
   return match;
 }
 
@@ -164,34 +295,39 @@ export async function completeEnd(
       body: JSON.stringify({ endNumber, scoreA, scoreB, nextDistance }),
     });
     if (res.ok) {
-      const match = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
-      return match;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const match = await res.json();
+        updateMatchInStorage(match);
+        return match;
+      }
     }
   } catch (err) {
     console.warn('Backend complete end failed, local fallback:', err);
   }
 
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  const match: Match = cached ? JSON.parse(cached) : createDemoMatch();
-  const end = match.ends.find((e) => e.endNumber === endNumber);
-  if (end) {
-    end.scoreA = scoreA;
-    end.scoreB = scoreB;
-    end.isCompleted = true;
-    if (scoreA > scoreB) end.winnerTeamId = match.teamA.id;
-    else if (scoreB > scoreA) end.winnerTeamId = match.teamB.id;
-  }
-  match.scoreA = match.ends.reduce((acc, e) => acc + (e.scoreA || 0), 0);
-  match.scoreB = match.ends.reduce((acc, e) => acc + (e.scoreB || 0), 0);
+  const list = getStoredMatches();
+  let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+  const updatedEnds = match.ends.map((e) => {
+    if (e.endNumber === endNumber) {
+      return {
+        ...e,
+        scoreA,
+        scoreB,
+        isCompleted: true,
+        winnerTeamId: scoreA > scoreB ? match.teamA.id : scoreB > scoreA ? match.teamB.id : null,
+      };
+    }
+    return e;
+  });
 
-  if (match.scoreA >= match.targetScore || match.scoreB >= match.targetScore) {
-    match.status = 'FINISHED';
-  } else {
-    const nextNum = match.ends.length + 1;
-    match.currentEndNumber = nextNum;
-    match.currentDistance = nextDistance as any;
-    match.ends.push({
+  const totalScoreA = updatedEnds.reduce((acc, e) => acc + (e.scoreA || 0), 0);
+  const totalScoreB = updatedEnds.reduce((acc, e) => acc + (e.scoreB || 0), 0);
+  const isFinished = totalScoreA >= match.targetScore || totalScoreB >= match.targetScore;
+
+  if (!isFinished && !updatedEnds.some((e) => e.endNumber === endNumber + 1)) {
+    const nextNum = endNumber + 1;
+    updatedEnds.push({
       id: `end_${Date.now()}_${nextNum}`,
       matchId: match.id,
       endNumber: nextNum,
@@ -202,8 +338,19 @@ export async function completeEnd(
       isCompleted: false,
     });
   }
-  match.updatedAt = Date.now();
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
+
+  match = {
+    ...match,
+    ends: updatedEnds,
+    scoreA: totalScoreA,
+    scoreB: totalScoreB,
+    status: isFinished ? 'FINISHED' : match.status,
+    currentEndNumber: isFinished ? match.currentEndNumber : endNumber + 1,
+    currentDistance: nextDistance as any,
+    updatedAt: Date.now(),
+  };
+
+  updateMatchInStorage(match);
   return match;
 }
 
@@ -211,36 +358,60 @@ export async function finishMatch(matchId: string): Promise<Match> {
   try {
     const res = await fetch(`/api/matches/${matchId}/finish`, { method: 'POST' });
     if (res.ok) {
-      const match = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
-      return match;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const match = await res.json();
+        updateMatchInStorage(match);
+        return match;
+      }
     }
   } catch (err) {
     console.warn('Finish match failed, local fallback:', err);
   }
 
-  const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
-  const match: Match = cached ? JSON.parse(cached) : createDemoMatch();
-  match.status = 'FINISHED';
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
+  const list = getStoredMatches();
+  let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+  match = {
+    ...match,
+    status: 'FINISHED',
+    updatedAt: Date.now(),
+  };
+  updateMatchInStorage(match);
   return match;
 }
 
+/**
+ * Restores all default research & demo matches:
+ * 1. GAMES 2 ; PERFORMA TRIPLE MEN, 20 OKTOBER 2025 (Tabel 1.1)
+ * 2. GAMES 2 ; PERFORMA MIXED TRIPLE, 26 OKTOBER 2025
+ * 3. SEA Games 2025 Final — Men Triples
+ */
 export async function resetDemo(): Promise<Match> {
   try {
     const res = await fetch('/api/reset-demo', { method: 'POST' });
     if (res.ok) {
-      const match = await res.json();
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
-      return match;
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const match = await res.json();
+        return match;
+      }
     }
   } catch (err) {
     console.warn('Reset demo failed, generating client-side:', err);
   }
-  const match = createDemoMatch();
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(match));
-  return match;
+  const defaultList = getDefaultMatches();
+  saveStoredMatches(defaultList);
+  setActiveMatchId(defaultList[0].id);
+  return defaultList[0];
 }
+
+export function restoreAllDefaultMatches(): Match[] {
+  const defaultList = getDefaultMatches();
+  saveStoredMatches(defaultList);
+  setActiveMatchId(defaultList[0].id);
+  return defaultList;
+}
+
 
 /**
  * Connects to Server-Sent Events stream for instantaneous live synchronization

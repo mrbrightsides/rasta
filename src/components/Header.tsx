@@ -25,6 +25,8 @@ interface HeaderProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   match: Match | null;
+  matchesList?: Match[];
+  onSelectMatch?: (match: Match) => void;
   isRealtimeConnected: boolean;
   onResetDemo: () => void;
   openMobilePreview: boolean;
@@ -35,6 +37,8 @@ export default function Header({
   activeTab,
   setActiveTab,
   match,
+  matchesList = [],
+  onSelectMatch,
   isRealtimeConnected,
   onResetDemo,
 }: HeaderProps) {
@@ -60,8 +64,30 @@ export default function Header({
           </div>
         </div>
 
-        {/* Live Match Badge, Match ID & Quick Controls */}
-        <div className="flex items-center gap-3 sm:gap-5">
+        {/* Live Match Badge, Match Selector & Quick Controls */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          {/* Match Switcher Dropdown */}
+          {matchesList.length > 0 && onSelectMatch && (
+            <div className="flex items-center gap-1.5 bg-[#001c77] border border-white/20 rounded-md px-2.5 py-1 text-xs">
+              <span className="text-[10px] uppercase font-bold text-white/70 hidden lg:inline">Match:</span>
+              <select
+                id="header-match-selector"
+                value={match?.id || ''}
+                onChange={(e) => {
+                  const target = matchesList.find((m) => m.id === e.target.value);
+                  if (target) onSelectMatch(target);
+                }}
+                className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer max-w-[220px] sm:max-w-[280px] truncate"
+              >
+                {matchesList.map((m) => (
+                  <option key={m.id} value={m.id} className="text-slate-900 bg-white">
+                    {m.name.length > 40 ? `${m.name.slice(0, 38)}...` : m.name} ({m.scoreA}-{m.scoreB})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Live Pulsing Badge */}
           <div
             className={`flex items-center gap-2 px-3 py-1 rounded-full text-white shadow-xs ${
@@ -72,16 +98,6 @@ export default function Header({
             <span className="text-xs font-bold uppercase tracking-widest">
               {isMatchLive ? 'Live Match' : 'Match Final'}
             </span>
-          </div>
-
-          {/* Match ID / Location */}
-          <div className="text-right hidden md:block">
-            <p className="text-[11px] text-white/70 uppercase font-semibold tracking-wider">
-              Match Info
-            </p>
-            <p className="font-mono text-sm text-white font-bold tracking-tight">
-              {match ? `${match.teamA.name.slice(0, 3)}-${match.teamB.name.slice(0, 3)}-${match.currentDistance}` : 'INA-THA-2024'}
-            </p>
           </div>
 
           {/* Quick Switch to Scorer (Primary Operational Button) */}
@@ -102,11 +118,11 @@ export default function Header({
           <button
             id="header-btn-reset"
             onClick={onResetDemo}
-            title="Reset to official demo data"
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded transition-colors"
+            title="Muat ulang seluruh 3 data pertandingan resmi (Tabel 1.1 Triple Men, Mixed Triple, SEA Games)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-white/90 hover:text-white bg-white/15 hover:bg-white/25 rounded transition-colors border border-white/20"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">Reset</span>
+            <span className="hidden sm:inline">Reset 3 Match</span>
           </button>
         </div>
       </div>

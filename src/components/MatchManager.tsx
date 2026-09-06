@@ -125,13 +125,14 @@ export default function MatchManager({
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             onClick={onResetDemo}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            title="Muat ulang seluruh 3 data pertandingan standar (Tabel 1.1 Triple Men, Mixed Triple, dan SEA Games)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-300"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Load SEA Games Demo</span>
+            <RotateCcw className="w-3.5 h-3.5 text-[#002395]" />
+            <span>Muat Ulang 3 Match Standar</span>
           </button>
 
           <button
@@ -222,53 +223,119 @@ export default function MatchManager({
 
       {/* Available Matches List */}
       <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1.5 h-4 bg-[#002395] rounded-xs" />
-          <h3 className="font-bold text-base text-slate-900 font-['Outfit']">
-            All Matches in System ({matchesList.length})
-          </h3>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-[#002395] rounded-xs" />
+            <h3 className="font-bold text-base text-slate-900 font-['Outfit']">
+              Daftar Semua Pertandingan ({matchesList.length})
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span>Klik kartu pertandingan untuk berpindah atau melihat analisisnya</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {matchesList.length < 3 && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex flex-wrap items-center justify-between gap-3 text-xs text-amber-800">
+            <span>
+              ℹ️ Browser Anda baru memuat {matchesList.length} pertandingan. Tersedia 3 pertandingan resmi (Tabel 1.1 Triple Men, Mixed Triple, dan SEA Games).
+            </span>
+            <button
+              onClick={onResetDemo}
+              className="px-3 py-1 bg-amber-600 text-white font-bold rounded hover:bg-amber-700 transition-colors"
+            >
+              Muat Semua 3 Match
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {matchesList.map((m) => {
             const isSelected = m.id === currentMatch.id;
+            const isDisertasiMen = m.id === 'match_triple_men_20okt';
+            const isDisertasiMixed = m.id === 'match_mixed_triple_26okt';
+            const isSeaGames = m.id === 'match_demo_01';
+
             return (
               <div
                 key={m.id}
                 onClick={() => onSelectMatch(m)}
-                className={`p-3.5 rounded-md border cursor-pointer transition-all flex items-center justify-between ${
+                className={`p-4 rounded-lg border cursor-pointer transition-all flex flex-col justify-between ${
                   isSelected
-                    ? 'bg-slate-50 border-[#002395] ring-1 ring-[#002395] shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-slate-300'
+                    ? 'bg-blue-50/50 border-[#002395] ring-2 ring-[#002395] shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-xs'
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-slate-900">{m.name}</span>
+                  <div className="flex items-center justify-between gap-1.5 mb-1.5">
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded uppercase ${
+                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        isDisertasiMen
+                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                          : isDisertasiMixed
+                          ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                          : isSeaGames
+                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                          : 'bg-slate-100 text-slate-700 border border-slate-200'
+                      }`}
+                    >
+                      {isDisertasiMen
+                        ? 'Tabel 1.1 Disertasi'
+                        : isDisertasiMixed
+                        ? 'Mixed Triple Disertasi'
+                        : isSeaGames
+                        ? 'SEA Games Live Demo'
+                        : m.category || 'Match'}
+                    </span>
+
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
                         m.status === 'LIVE'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-green-100 text-green-800 animate-pulse'
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
                       {m.status}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {m.teamA.name} ({m.scoreA}) vs {m.teamB.name} ({m.scoreB}) · {m.actions.length} throws
-                  </p>
+
+                  <h4 className="font-bold text-xs text-slate-900 line-clamp-2 mt-1 leading-snug">
+                    {m.name}
+                  </h4>
+
+                  <div className="mt-2 text-xs text-slate-600 font-medium">
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="truncate max-w-[140px] text-slate-800">{m.teamA.name}</span>
+                      <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 rounded">{m.scoreA}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="truncate max-w-[140px] text-slate-800">{m.teamB.name}</span>
+                      <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 rounded">{m.scoreB}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>{m.actions.length} lemparan ({m.ends.length} end)</span>
+                    <span className="font-mono">{m.date}</span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="mt-3 pt-2">
                   {isSelected ? (
-                    <span className="text-xs font-bold text-[#002395] flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Active
-                    </span>
+                    <div className="w-full py-1.5 px-3 bg-[#002395] text-white rounded text-xs font-bold text-center flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Sedang Aktif Dipilih</span>
+                    </div>
                   ) : (
-                    <button className="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md">
-                      Load
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectMatch(m);
+                      }}
+                      className="w-full py-1.5 px-3 bg-slate-100 hover:bg-[#002395] text-slate-700 hover:text-white rounded text-xs font-bold text-center transition-colors"
+                    >
+                      Buka Pertandingan Ini
                     </button>
                   )}
                 </div>

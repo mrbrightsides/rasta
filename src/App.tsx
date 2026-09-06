@@ -7,10 +7,13 @@ import {
   completeEnd,
   finishMatch,
   resetDemo,
+  restoreAllDefaultMatches,
   createMatch,
   subscribeToMatchUpdates,
+  getActiveMatchId,
+  setActiveMatchId,
 } from './lib/api';
-import { createDemoMatch, createMixedTripleMatch, createTripleMenMatch } from './lib/demoData';
+import { getDefaultMatches, createDemoMatch, createMixedTripleMatch, createTripleMenMatch } from './lib/demoData';
 import Header, { NavTab } from './components/Header';
 import LiveDashboard from './components/LiveDashboard';
 import MobileScorer from './components/MobileScorer';
@@ -43,12 +46,12 @@ export default function App() {
     return 'excel-sheet'; // Default to Excel Sheet so user immediately sees their exact spreadsheet!
   });
 
-  const [matches, setMatches] = useState<Match[]>([
-    createTripleMenMatch(),
-    createMixedTripleMatch(),
-    createDemoMatch(),
-  ]);
-  const [currentMatch, setCurrentMatch] = useState<Match>(createTripleMenMatch());
+  const [matches, setMatches] = useState<Match[]>(() => getDefaultMatches());
+  const [currentMatch, setCurrentMatch] = useState<Match>(() => {
+    const defaults = getDefaultMatches();
+    const activeId = getActiveMatchId();
+    return defaults.find((m) => m.id === activeId) || defaults[0];
+  });
   const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [openMobilePreview, setOpenMobilePreview] = useState<boolean>(false);
@@ -66,7 +69,9 @@ export default function App() {
         const list = await fetchMatches();
         if (isMounted && list && list.length > 0) {
           setMatches(list);
-          setCurrentMatch(list[0]);
+          const activeId = getActiveMatchId();
+          const found = list.find((m) => m.id === activeId);
+          setCurrentMatch(found || list[0]);
         }
       } catch (err) {
         console.error('Error loading matches:', err);
@@ -106,8 +111,9 @@ export default function App() {
           prev.map((m) => (m.id === payload.match.id ? payload.match : m))
         );
       } else if (event === 'demo_reset') {
-        setCurrentMatch(payload);
-        setMatches([payload]);
+        const defaults = restoreAllDefaultMatches();
+        setMatches(defaults);
+        setCurrentMatch(defaults[0]);
       } else if (event === 'match_created') {
         setMatches((prev) => [payload, ...prev]);
         setCurrentMatch(payload);
@@ -185,15 +191,21 @@ export default function App() {
   }, [currentMatch]);
 
   const handleResetDemo = useCallback(async () => {
-    const demo = await resetDemo();
-    setCurrentMatch(demo);
-    setMatches([demo]);
+    const defaults = restoreAllDefaultMatches();
+    setMatches(defaults);
+    setCurrentMatch(defaults[0]);
+  }, []);
+
+  const handleSelectMatch = useCallback((m: Match) => {
+    setCurrentMatch(m);
+    setActiveMatchId(m.id);
   }, []);
 
   const handleCreateMatch = useCallback(async (matchData: Partial<Match>) => {
     const created = await createMatch(matchData);
     setMatches((prev) => [created, ...prev]);
     setCurrentMatch(created);
+    setActiveMatchId(created.id);
     setActiveTab('scorer');
   }, []);
 
@@ -204,6 +216,8 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         match={currentMatch}
+        matchesList={matches}
+        onSelectMatch={handleSelectMatch}
         isRealtimeConnected={isRealtimeConnected}
         onResetDemo={handleResetDemo}
         openMobilePreview={openMobilePreview}
@@ -220,7 +234,7 @@ export default function App() {
             onDeleteAction={handleDeleteAction}
             onSwitchToMatch={(mId) => {
               const found = matches.find((m) => m.id === mId);
-              if (found) setCurrentMatch(found);
+              if (found) handleSelectMatch(found);
             }}
           />
         )}
@@ -228,6 +242,8 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <LiveDashboard
             match={currentMatch}
+            matches={matches}
+            onSelectMatch={handleSelectMatch}
             onNavigateToScorer={() => setActiveTab('scorer')}
             onNavigateToTeamFullTime={() => setActiveTab('team-fulltime')}
           />
@@ -257,7 +273,7 @@ export default function App() {
           <MatchManager
             currentMatch={currentMatch}
             matchesList={matches}
-            onSelectMatch={(m) => setCurrentMatch(m)}
+            onSelectMatch={handleSelectMatch}
             onCreateMatch={handleCreateMatch}
             onFinishMatch={handleFinishMatch}
             onResetDemo={handleResetDemo}

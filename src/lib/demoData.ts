@@ -531,3 +531,17 @@ export function createTripleMenMatch(): Match {
     updatedAt: 1729405000,
   };
 }
+
+/**
+ * Returns all default matches available in the RASTA Petanque platform:
+ * 1. GAMES 2 ; PERFORMA TRIPLE MEN, 20 OKTOBER 2025 (Tabel 1.1 Disertasi Dr. Rasyono)
+ * 2. GAMES 2 ; PERFORMA MIXED TRIPLE, 26 OKTOBER 2025
+ * 3. SEA Games 2025 Final — Men Triples (Live Match Demo)
+ */
+export function getDefaultMatches(): Match[] {
+  return [
+    createTripleMenMatch(),
+    createMixedTripleMatch(),
+    createDemoMatch(),
+  ];
+}

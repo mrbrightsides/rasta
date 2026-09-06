@@ -20,12 +20,16 @@ import {
 
 interface LiveDashboardProps {
   match: Match;
+  matches?: Match[];
+  onSelectMatch?: (m: Match) => void;
   onNavigateToScorer: () => void;
   onNavigateToTeamFullTime: () => void;
 }
 
 export default function LiveDashboard({
   match,
+  matches = [],
+  onSelectMatch,
   onNavigateToScorer,
   onNavigateToTeamFullTime,
 }: LiveDashboardProps) {
@@ -79,6 +83,36 @@ export default function LiveDashboard({
 
   return (
     <div className="space-y-6">
+      {/* Match Selector Strip */}
+      {matches.length > 1 && onSelectMatch && (
+        <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-4 bg-[#002395] rounded-xs" />
+            <span className="text-xs font-bold text-slate-800">Pilih Pertandingan:</span>
+            <span className="text-xs text-slate-500 font-medium">({matches.length} tersedia)</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {matches.map((m) => {
+              const isSelected = m.id === match.id;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => onSelectMatch(m)}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all truncate max-w-[200px] sm:max-w-[260px] ${
+                    isSelected
+                      ? 'bg-[#002395] text-white shadow-2xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                  title={m.name}
+                >
+                  {m.name.length > 28 ? `${m.name.slice(0, 26)}...` : m.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 1. MATCH SCOREBOARD HERO CARD (Professional Polish Design Spec) */}
       <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-4 sm:p-6 flex flex-col lg:flex-row justify-between items-center gap-6">
         {/* Score & Teams Container */}
