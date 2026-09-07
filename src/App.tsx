@@ -31,13 +31,15 @@ import { Smartphone, Monitor, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function App() {
   // Navigation tab state (supports hash routes e.g. #landing, #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report)
+  // Secara default SELALU membuka Landing Page terlebih dahulu saat pertama kali masuk / buka aplikasi
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const hash = window.location.hash.replace('#', '');
     if (
+      hash &&
+      hash !== 'excel-sheet' &&
       [
         'landing',
         'dashboard',
-        'excel-sheet',
         'precision-shooting',
         'post-match-report',
         'scorer',
@@ -50,7 +52,7 @@ export default function App() {
     ) {
       return hash as NavTab;
     }
-    return 'excel-sheet'; // Default to Excel Sheet so user immediately sees their exact spreadsheet!
+    return 'landing'; // Selalu mulai dari Landing Page saat pertama masuk dan buka aplikasi
   });
 
   const [matches, setMatches] = useState<Match[]>(() => getDefaultMatches());
