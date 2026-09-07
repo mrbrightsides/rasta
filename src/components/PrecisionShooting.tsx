@@ -644,7 +644,7 @@ ${evaluation.coachingRecommendation}
           </div>
 
           {/* Numbers Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                 Total Skor
@@ -668,18 +668,6 @@ ${evaluation.coachingRecommendation}
               </div>
               <div className="text-[10px] text-amber-800 font-bold">
                 {evaluation.percentageRealistic}% Kemampuan Puncak
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Target SEA Games
-              </div>
-              <div className="text-2xl font-black text-slate-800 my-0.5">
-                42 - 54
-              </div>
-              <div className="text-[10px] text-slate-500">
-                Range Peraih Medali
               </div>
             </div>
 

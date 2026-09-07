@@ -269,7 +269,7 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                 <th className="py-2.5 px-3 text-center font-bold">Pointing Acc.</th>
                 <th className="py-2.5 px-3 text-center font-bold">Shooting Acc.</th>
                 <th className="py-2.5 px-3 text-center font-bold">Carreau Rate</th>
-                <th className="py-2.5 px-3 text-center font-bold">Distance Control</th>
+                <th className="py-2.5 px-3 text-center font-bold">Distance Target</th>
                 <th className="py-2.5 px-3 text-center font-bold">Total Throws</th>
                 <th className="py-2.5 px-3 text-center font-bold">Standar Medali</th>
                 <th className="py-2.5 px-4 text-center font-bold">Profile</th>
@@ -488,7 +488,7 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                     </span>
                   </div>
                   <div className="p-2 bg-white rounded-md border border-slate-200 flex justify-between items-center">
-                    <span className="font-semibold text-slate-600">Distance Control:</span>
+                    <span className="font-semibold text-slate-600">Distance Target:</span>
                     <span className="font-mono font-bold text-slate-900">
                       {detailData.overall.distanceControlAvgCm}
                     </span>

@@ -16,6 +16,7 @@ import {
   FileCheck2,
   Target,
   HardDrive,
+  Plus,
 } from 'lucide-react';
 
 export type NavTab =
@@ -88,7 +89,7 @@ export default function Header({
                   const target = matchesList.find((m) => m.id === e.target.value);
                   if (target) onSelectMatch(target);
                 }}
-                className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer max-w-[220px] sm:max-w-[280px] truncate"
+                className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer max-w-[200px] sm:max-w-[260px] truncate"
               >
                 {matchesList.map((m) => (
                   <option key={m.id} value={m.id} className="text-slate-900 bg-white">
@@ -98,6 +99,17 @@ export default function Header({
               </select>
             </div>
           )}
+
+          {/* Quick Create New Game Button */}
+          <button
+            id="header-btn-new-match"
+            onClick={() => setActiveTab('matches')}
+            title="Mulai / Buat Pertandingan Baru (Start New Game)"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded transition-all shadow-xs border border-emerald-500/50"
+          >
+            <Plus className="w-3.5 h-3.5 text-white" />
+            <span>Game Baru</span>
+          </button>
 
           {/* Live Pulsing Badge */}
           <div
@@ -301,8 +313,8 @@ export default function Header({
                 : 'text-white/80 hover:text-white hover:bg-white/10'
             }`}
           >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Match Setup & History</span>
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span>Match Setup & Game Baru</span>
           </button>
         </nav>
       </div>
