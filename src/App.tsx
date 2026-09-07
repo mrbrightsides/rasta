@@ -27,32 +27,32 @@ import ExcelPerformanceSheet from './components/ExcelPerformanceSheet';
 import PostMatchReport from './components/PostMatchReport';
 import PrecisionShooting from './components/PrecisionShooting';
 import LandingPage from './components/LandingPage';
+import AthleteTestPdfReport from './components/AthleteTestPdfReport';
 import { Smartphone, Monitor, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function App() {
-  // Navigation tab state (supports hash routes e.g. #landing, #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report)
-  // Secara default SELALU membuka Landing Page terlebih dahulu saat pertama kali masuk / buka aplikasi
+  // Navigation tab state (supports hash routes e.g. #landing, #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report, #athlete-pdf-report)
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const hash = window.location.hash.replace('#', '');
     if (
-      hash &&
-      hash !== 'excel-sheet' &&
       [
         'landing',
         'dashboard',
+        'excel-sheet',
         'precision-shooting',
         'post-match-report',
         'scorer',
         'team-fulltime',
         'stats-per-end',
         'athletes',
+        'athlete-pdf-report',
         'head-to-head',
         'matches',
       ].includes(hash)
     ) {
       return hash as NavTab;
     }
-    return 'landing'; // Selalu mulai dari Landing Page saat pertama masuk dan buka aplikasi
+    return 'excel-sheet'; // Default to Excel Sheet so user immediately sees their exact spreadsheet!
   });
 
   const [matches, setMatches] = useState<Match[]>(() => getDefaultMatches());
@@ -304,6 +304,10 @@ export default function App() {
         )}
 
         {activeTab === 'athletes' && <AthleteAnalytics match={currentMatch} />}
+
+        {activeTab === 'athlete-pdf-report' && (
+          <AthleteTestPdfReport match={currentMatch} />
+        )}
 
         {activeTab === 'head-to-head' && <HeadToHead match={currentMatch} />}
 

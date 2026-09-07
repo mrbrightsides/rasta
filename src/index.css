@@ -19,3 +19,49 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Print / PDF Styles for A4 Multi-Page Output */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 10mm 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide app header, navigation, footers, controls during print */
+  header, footer, nav, .no-print {
+    display: none !important;
+  }
+
+  /* Ensure main wrapper does not constrain or add overflow */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Page container and page breaks */
+  .athlete-pdf-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    min-height: 270mm !important;
+  }
+
+  .athlete-pdf-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+}

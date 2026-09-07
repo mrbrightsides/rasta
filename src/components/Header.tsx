@@ -18,6 +18,7 @@ import {
   HardDrive,
   Plus,
   Home,
+  FileText,
 } from 'lucide-react';
 
 export type NavTab =
@@ -29,6 +30,7 @@ export type NavTab =
   | 'team-fulltime'
   | 'stats-per-end'
   | 'athletes'
+  | 'athlete-pdf-report'
   | 'head-to-head'
   | 'post-match-report'
   | 'matches';
@@ -308,6 +310,22 @@ export default function Header({
           >
             <Users className="w-3.5 h-3.5" />
             <span>Athlete Analytics</span>
+          </button>
+
+          <button
+            id="nav-tab-athlete-pdf-report"
+            onClick={() => setActiveTab('athlete-pdf-report')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all whitespace-nowrap ${
+              activeTab === 'athlete-pdf-report'
+                ? 'bg-rose-600 text-white font-black shadow-xs ring-2 ring-rose-400'
+                : 'text-rose-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-rose-300" />
+            <span>Laporan PDF Atlet</span>
+            <span className="bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded">
+              PDF A4
+            </span>
           </button>
 
           <button

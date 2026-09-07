@@ -26,6 +26,7 @@ import {
   GraduationCap,
   Brain,
   Dumbbell,
+  FileText,
 } from 'lucide-react';
 
 interface AthleteAnalyticsProps {
@@ -643,7 +644,17 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setDetailPlayer(null);
+                  window.location.hash = 'athlete-pdf-report';
+                }}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-md transition-colors flex items-center gap-1.5 shadow-xs"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Cetak Laporan PDF Atlet</span>
+              </button>
               <button
                 onClick={() => setDetailPlayer(null)}
                 className="px-4 py-1.5 bg-[#002395] hover:bg-[#001b70] text-white font-bold text-xs rounded-md transition-colors"
