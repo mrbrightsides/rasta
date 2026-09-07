@@ -7,6 +7,7 @@ import {
   DISTANCES,
 } from '../lib/calculations';
 import RadarChartComp from './RadarChartComp';
+import SixIndicatorsShowcase from './SixIndicatorsShowcase';
 import {
   Target,
   Sparkles,
@@ -16,6 +17,7 @@ import {
   Award,
   Layers,
   Clock,
+  FileCheck2,
 } from 'lucide-react';
 
 interface LiveDashboardProps {
@@ -24,6 +26,7 @@ interface LiveDashboardProps {
   onSelectMatch?: (m: Match) => void;
   onNavigateToScorer: () => void;
   onNavigateToTeamFullTime: () => void;
+  onNavigateToPostMatch?: () => void;
 }
 
 export default function LiveDashboard({
@@ -32,6 +35,7 @@ export default function LiveDashboard({
   onSelectMatch,
   onNavigateToScorer,
   onNavigateToTeamFullTime,
+  onNavigateToPostMatch,
 }: LiveDashboardProps) {
   // Actions filtered by team
   const teamAActions = useMemo(
@@ -235,8 +239,24 @@ export default function LiveDashboard({
               </span>
             ))}
           </div>
+
+          {/* Quick link to Post-Match Report */}
+          {onNavigateToPostMatch && (
+            <div className="mt-3 pt-2 border-t border-slate-200/80">
+              <button
+                onClick={onNavigateToPostMatch}
+                className="w-full py-1.5 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <FileCheck2 className="w-3.5 h-3.5" />
+                <span>Buka Post-Match Report & Latihan</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* 6 CORE PERFORMANCE INDICATORS (RASYONO DISSERTATION FRAMEWORK) */}
+      <SixIndicatorsShowcase match={match} statsA={statsA} statsB={statsB} />
 
       {/* 2. TEAM PERFORMANCE OVERVIEW CARDS (Professional Polish Progress Bars) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">

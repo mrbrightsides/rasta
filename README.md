@@ -1,110 +1,140 @@
-# 🎯 RASTA Petanque (Rasyono Technology Analysis Petanque)
+# 🎯 RASTA Petanque (Rasyo Technology Analysis Petanque)
 
 [![Live App](https://img.shields.io/badge/Live_Demo-rasta--petanque.vercel.app-002395?style=for-the-badge&logo=vercel)](https://rasta-petanque.vercel.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-mrbrightsides%2Frasta-181717?style=for-the-badge&logo=github)](https://github.com/mrbrightsides/rasta.git)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Storage](https://img.shields.io/badge/Storage-100%25_LocalStorage_Offline-10B981?style=for-the-badge&logo=databricks)](https://github.com/mrbrightsides/rasta.git)
 
-> **RASTA Petanque (Rasyono Technology Analysis Petanque)** is a real-time sports performance analysis platform designed for coaches, athletes, tournament officials, and researchers in the sport of pétanque. 
+> **RASTA Petanque (Rasyo Technology Analysis Petanque)** adalah platform analisis performa olahraga petanque berbasis web dan mobile yang dirancang untuk pelatih, atlet, wasit turnamen, pengurus cabang (FOPI), dan peneliti olahraga.
 > 
-> Grounded in the scientific framework and doctoral research of **Dr. Rasyono** (Universitas Negeri Padang / UNP), RASTA bridges the gap between field observation and empirical performance data.
+> Dikembangkan atas dasar kerangka ilmiah dan riset disertasi Doktoral **Rasyono, S.Pd., M.Pd.** (NIM. 25344021) pada Program Pascasarjana Doktor Ilmu Keolahragaan, **Universitas Negeri Padang (UNP)**.
 
 ---
 
-## 🌐 Quick Links
+## 🌐 Tautan Cepat / Quick Links
 
-- **Repository**: [https://github.com/mrbrightsides/rasta.git](https://github.com/mrbrightsides/rasta.git)
-- **Live Production URL**: [https://rasta-petanque.vercel.app](https://rasta-petanque.vercel.app)
-
----
-
-## 📖 Scientific Background & Research Motivation
-
-Traditional evaluation in pétanque often relies on post-match recollections, raw final scores, or manual pen-and-paper tallies that fail to capture granular technical breakdowns. Under the doctoral dissertation of **Dr. Rasyono**, the RASTA system addresses key performance criteria:
-
-1. **Binary Micro-Scoring**: Evaluates each boule attempt dynamically ($1$ for success, $0$ for failure) based on situational intent (*Pointing* vs *Shooting*).
-2. **Sub-Technique Discrimination** (*Bab II Hal 17–21*):
-   - **Pointing**: *Rolling* (gesur / menyusur tanah), *Soft-Lob / Half-Lob* (parabola sedang), and *High-Lob* (parabola tinggi).
-   - **Shooting**: *Au Fer* (shot directly on the iron / bola sasaran), *Short Shot* (jatuh 20–30 cm di depan target), and *Ground Shot* (rasant / menyusur tanah).
-3. **Distance-Partitioned Profiling**: Tracks performance across official FIPJP target distances from **6m, 7m, 8m, 9m, to 10m**.
-4. **Jack Proximity Metric**: Measures continuous distance to the *cochonnet* / jack ($d_{\text{jack}}$ in cm) for high-resolution pointing dispersion analysis.
-5. **Carreau Conversion Rate**: Specific tracking of *carreau* (perfect displacement where the thrown boule replaces the target boule in position).
+- **Repository GitHub**: [https://github.com/mrbrightsides/rasta.git](https://github.com/mrbrightsides/rasta.git)
+- **Live Demo Aplikasi**: [https://rasta-petanque.vercel.app](https://rasta-petanque.vercel.app)
 
 ---
 
-## ✨ Key Platform Modules
+## 📖 Latar Belakang Ilmiah & Motivasi Riset (Disertasi UNP)
 
-### 1. 📱 Sideline Mobile Scorer
-- **5-Tap Recording Flow**: Team $\rightarrow$ Athlete $\rightarrow$ Action & Sub-Technique $\rightarrow$ Target Distance $\rightarrow$ Outcome.
-- **Quota & Turn Enforcement**: Real-time counter of boules thrown per end (e.g. 6 per team in Triples) and strict 2-boule limit tracking per player per end.
-- **Centimeter Precision**: Quick-select presets (5cm, 10cm, 20cm, 30cm, 50cm, >1m) or custom input for distance to jack.
-- **One-Tap Undo & End Finalizer**: Safe corrections for scorer misclicks and structured end scoring dialog.
+Evaluasi tradisional dalam olahraga petanque sering kali bergantung pada catatan manual berbasis kertas (*pen-and-paper*), ingatan pelatih pasca-tanding, atau sekadar skor akhir tanpa membedah detail teknis setiap lemparan. Melalui riset disertasi **Rasyono** di Universitas Negeri Padang dengan judul:
+> *“Analisis Performa Atlet Berbasis Aplikasi Dalam Permainan Olahraga Petanque”*
 
-### 2. 📊 Live Dashboard
-- Real-time scoreboard with dynamic score differential and current end indicator.
-- Instant team-level pointing and shooting efficiency gauges.
-- Running log of all boules delivered in chronological order.
+Sistem RASTA mengonversi seluruh data observasi fisik (*Score Sheet*) menjadi sistem telemetri digital real-time dengan parameter:
 
-### 3. 👥 Head-to-Head & Team Full-Time Analysis
-- Direct comparison between Team A and Team B across all core performance pillars.
-- End-by-end points momentum curve.
-- Success rate distribution across different target distances.
-
-### 4. 🎯 Individual Athlete Analytics & Radar Profiling
-- Multi-axis Radar Charts (Recharts) evaluating:
-  - **Pointing Accuracy**
-  - **Shooting Accuracy**
-  - **Carreau Rate**
-  - **Distance Control**
-  - **Overall Match Effectiveness**
-- Sub-technique breakdown matrices (*Rolling vs Half-Lob vs High-Lob*, *Au Fer vs Short Shot vs Ground Shot*).
-- Distance breakdown tables highlighting athlete strengths and drop-off zones.
-
-### 5. 📑 Excel Performance Sheet (Replika Tabel 1.1 Digital)
-- Exact digital replication of the RASTA Petanque physical observation sheet and Excel benchmark format.
-- Visual color coding: Blue for Pointing, Rose for Shooting, Emerald for Team Summaries.
-- Formula-accurate zero handling (`#DIV/0!` representation for categories with 0 attempts, avoiding misleading 0% ratings).
-- One-click CSV export ready for statistical tools (SPSS, R, Python, Microsoft Excel).
-
-### 6. ⚙️ Match Manager
-- Create custom match setups (Singles, Doubles, Triples).
-- Pre-loaded tournament presets (e.g. Jakarta International Petanque Arena showcase match).
-- Persistent state management across browser sessions.
+1. **Micro-Scoring Biner & Terdistribusi**: Menilai keberhasilan ($1$ sukses, $0$ gagal) berdasarkan situasi lemparan (*Pointing* vs *Shooting*).
+2. **Diferensiasi Sub-Teknik Lemparan** (*Kajian Teori Bab II Hal 17–21*):
+   - **Pointing**: *Rolling* (gesur / menyusur tanah), *Soft-Lob / Half-Lob* (parabola sedang), dan *High-Lob* (parabola tinggi).
+   - **Shooting**: *Au Fer* (langsung tepat mengenai bola sasaran), *Short Shot* (jatuh 20–30 cm di depan sasaran), dan *Ground Shot* (rasant / menyusur tanah).
+3. **Analisis Berdasarkan Jarak Resmi FIPJP/FOPI**: Jarak target terstandar dari **6m, 7m, 8m, 9m, hingga 10m**.
+4. **Metrik Proksimitas Jack (Dispersi Jarak)**: Pencatatan deviasi jarak bola ke jack (*boka*) dalam centimeter (cm) untuk analisis akurasi pointing tingkat lanjut.
+5. **Konversi Carreau**: Deteksi khusus lemparan *carreau* (bola tembakan menggantikan posisi bola sasaran secara sempurna).
+6. **Modul Resmi Precision Shooting (Tembakan Presisi 60 Poin)**: Replika lembar skor resmi FOPI / FIPJP dengan evaluasi benchmark medali SEA Games & World Games.
 
 ---
 
-## 🧮 Mathematical Formulations
+## ✨ Modul Utama Platform
 
-The RASTA computational engine calculates sports analytics metrics using the following standardized formulas:
+### 1. 🎯 Precision Shooting (Score Sheet FOPI & Disertasi UNP)
+- **Replika Autentik Format Excel**: Mengacu langsung pada berkas *Score Sheet Precision Shooting.xlsx*.
+- **5 Figure / Station & 4 Jarak Lemparan**:
+  - Figure 1: *Boule Alone* (Bola Sasaran Tunggal)
+  - Figure 2: *Boule Behind Jack* (Bola Sasaran Dibelakang Jack)
+  - Figure 3: *Between Two Boules* (Bola Sasaran Diantara Dua Bola Penghalang)
+  - Figure 4: *Jump Over Boule* (Bola Sasaran Dibelakang Bola Penghalang)
+  - Figure 5: *Jack / Boka* (Sasaran Jack)
+  - Jarak FIPJP: **6.5m, 7.5m, 8.5m, dan 9.5m** (Total 20 lemparan).
+- **Skor FOPI Cepat**: Tombol skor 5P (*Carreau*), 3P (*Frappe/Kena*), 1P (*Senggol/Touched*), dan 0P (*Gagal/Missed*).
+- **Standar Evaluasi Medali SEA Games (Slide Disertasi)**:
+  - 🥇 **$\ge 90\%$ (Skor $\ge 54$ Poin)**: **Medali Emas** — Kategori *Sangat Baik* (*"Emas berani kita targetkan"*).
+  - 🥈 **$80\% - 89\%$ (Skor $48 - 53$ Poin)**: **Medali Perak** — Kategori *Baik* (*"Dipastikan medali perak"*).
+  - 🥉 **$70\% - 79\%$ (Skor $42 - 47$ Poin)**: **Medali Perunggu** — Kategori *Cukup Baik* (*"Bisa bicara medali perunggu"*).
+  - ⚠️ **$< 70\%$ (Skor $< 42$ Poin)**: **Kategori Evaluasi** (di bawah rata-rata podium SEA Games).
+- **Multi-Sheet Management**: Buat lembar baru, duplikat lembar, ganti antar babak (*Qualification, 2nd Chance, Quarter Final, Semi Final, Final*), serta tanda tangan wasit & atlet.
 
-### 1. Pointing Efficiency
-$$\text{Eff}_{\text{point}} = \begin{cases} \left( \frac{\sum P_{\text{success}}}{\sum P_{\text{total}}} \right) \times 100\%, & \text{if } \sum P_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{if } \sum P_{\text{total}} = 0 \end{cases}$$
+### 2. 📱 Sideline Mobile Scorer (Konsol Lapangan)
+- **Alur Cepat 5-Tap**: Tim $\rightarrow$ Atlet $\rightarrow$ Aksi & Sub-Teknik $\rightarrow$ Jarak Target $\rightarrow$ Hasil Lemparan.
+- **Validasi Kuota Bola**: Penghitung otomatis sisa bola per babak (misal 6 bola per tim pada Triple) dan pembatasan ketat maksimal 2 bola per atlet per end.
+- **Preset Proksimitas Centimeter**: Pilihan cepat (5cm, 10cm, 20cm, 30cm, 50cm, >1m) atau input kustom jarak ke jack.
+- **Undo 1-Sentuhan & Finalisasi Babak**: Koreksi instan jika salah input dan dialog skor resmi akhir end.
 
-### 2. Shooting Accuracy
-$$\text{Acc}_{\text{shoot}} = \begin{cases} \left( \frac{\sum S_{\text{success}}}{\sum S_{\text{total}}} \right) \times 100\%, & \text{if } \sum S_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{if } \sum S_{\text{total}} = 0 \end{cases}$$
+### 3. 📑 Excel Performance Sheet (Replika Digital Tabel 1.1)
+- Representasi digital tabel observasi lapangan Tabel 1.1 dari riset Disertasi.
+- Visual kode warna: Biru untuk Pointing, Merah Muda untuk Shooting, Hijau untuk Ringkasan Tim.
+- Penanganan nol matematis akurat (`#DIV/0!` untuk kategori tanpa percobaan, menghindari pembiasan nilai 0%).
+- Fitur ekspor berkas CSV instan yang kompatibel dengan Microsoft Excel, SPSS, dan R Studio.
 
-### 3. Carreau Conversion Rate
-$$\text{Rate}_{\text{carreau}} = \begin{cases} \left( \frac{\sum S_{\text{carreau}}}{\sum S_{\text{total}}} \right) \times 100\%, & \text{if } \sum S_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{if } \sum S_{\text{total}} = 0 \end{cases}$$
+### 4. 📊 Live Dashboard & Telemetri
+- Papan skor real-time dengan perbedaan skor dinamis dan indikator end aktif.
+- Gauge efisiensi pointing dan akurasi shooting tim.
+- Log berurutan setiap bola yang dilempar secara kronologis.
 
-### 4. Mean Jack Proximity (Distance Control)
-$$\bar{D}_{\text{jack}} = \frac{1}{N} \sum_{i=1}^{N} d_i \quad (\text{measured in cm})$$
+### 5. 👥 Head-to-Head & Team Full-Time Analysis
+- Perbandingan komparatif Tim A vs Tim B di seluruh indikator utama.
+- Kurva momentum perolehan poin per-babak (*end-by-end*).
+- Distribusi tingkat keberhasilan berdasarkan jarak target lemparan.
 
-### 5. Overall Match Effectiveness
+### 6. 📈 Radar Profiling & Analitik Atlet
+- Grafik Radar Multi-Sumbu (Recharts) mengevaluasi:
+  - Akurasi Pointing
+  - Akurasi Shooting
+  - Rasio Carreau
+  - Kontrol Jarak (Distance Control)
+  - Efektivitas Keseluruhan (Overall Match Effectiveness)
+- Matriks sub-teknik (*Rolling vs Half-Lob vs High-Lob*, *Au Fer vs Short Shot vs Ground Shot*).
+
+### 7. 💾 Sistem Penyimpanan LocalStorage (100% Offline-First)
+- **Penyimpanan Lokal Otomatis**: Seluruh data pertandingan, atlet, dan lembar skor Precision Shooting otomatis tersimpan di `localStorage` browser tanpa ketergantungan koneksi server.
+- **Cadangan & Pemulihan (Backup & Restore JSON)**: Unduh seluruh basis data lokal ke berkas `.json` dan pulihkan kembali kapan saja di perangkat mana pun.
+- **Modal Metrik LocalStorage**: Menampilkan jumlah pertandingan, jumlah lembar presisi, dan estimasi penggunaan memori browser.
+
+---
+
+## 🧮 Rumus & Formulasi Perhitungan (Game Match)
+
+### 1. Efisiensi Pointing (Pointing Efficiency)
+$$\text{Eff}_{\text{point}} = \begin{cases} \left( \frac{\sum P_{\text{success}}}{\sum P_{\text{total}}} \right) \times 100\%, & \text{jika } \sum P_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{jika } \sum P_{\text{total}} = 0 \end{cases}$$
+
+### 2. Akurasi Shooting (Shooting Accuracy)
+$$\text{Acc}_{\text{shoot}} = \begin{cases} \left( \frac{\sum S_{\text{success}}}{\sum S_{\text{total}}} \right) \times 100\%, & \text{jika } \sum S_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{jika } \sum S_{\text{total}} = 0 \end{cases}$$
+
+### 3. Rasio Konversi Carreau (Carreau Rate)
+$$\text{Rate}_{\text{carreau}} = \begin{cases} \left( \frac{\sum S_{\text{carreau}}}{\sum S_{\text{total}}} \right) \times 100\%, & \text{jika } \sum S_{\text{total}} > 0 \\ \text{N/A} \ (\#\text{DIV/0!}), & \text{jika } \sum S_{\text{total}} = 0 \end{cases}$$
+
+### 4. Rata-rata Jarak ke Jack (Distance Control)
+$$\bar{D}_{\text{jack}} = \frac{1}{N} \sum_{i=1}^{N} d_i \quad (\text{satuan centimeter})$$
+
+### 5. Efektivitas Keseluruhan Pertandingan (Overall Match Effectiveness)
 $$\text{Eff}_{\text{overall}} = \left( \frac{\sum P_{\text{success}} + \sum S_{\text{success}}}{\sum P_{\text{total}} + \sum S_{\text{total}}} \right) \times 100\%$$
 
 ---
 
-## 🏆 Performance Benchmark Tiers
+## 🎯 Standar Evaluasi & Benchmark Prestasi
 
-Based on national and international tournament thresholds referenced in the research:
+### Standar Game Match (Pointing & Shooting)
+| Kategori Medali | Efektivitas Keseluruhan | Target Pointing | Target Shooting | Keterangan |
+|:---|:---:|:---:|:---:|:---|
+| 🥇 **Emas / Juara Dunia** | $\ge 90.0\%$ | $\ge 90.0\%$ | $\ge 85.0\%$ | Sangat Baik / Standar Juara Dunia |
+| 🥈 **Perak / Finalis** | $80.0\% - 89.9\%$ | $80.0\% - 89.9\%$ | $75.0\% - 84.9\%$ | Baik / Standar Finalis Turnamen |
+| 🥉 **Perunggu / Semifinalis** | $70.0\% - 79.9\%$ | $70.0\% - 79.9\%$ | $65.0\% - 74.9\%$ | Cukup / Standar Semifinal |
+| ⚠️ **Evaluasi Teknis** | $< 70.0\%$ | $< 70.0\%$ | $< 65.0\%$ | Perlu Penajaman Drill Fisik & Teknik |
 
-| Rating Tier | Overall Effectiveness | Pointing Target | Shooting Target |
-|:---|:---:|:---:|:---:|
-| 🥇 **Elite / National** | $\ge 80.0\%$ | $\ge 80.0\%$ | $\ge 75.0\%$ |
-| 🥈 **Advanced / Pro** | $65.0\% - 79.9\%$ | $65.0\% - 79.9\%$ | $60.0\% - 74.9\%$ |
-| 🥉 **Intermediate** | $50.0\% - 64.9\%$ | $50.0\% - 64.9\%$ | $45.0\% - 59.9\%$ |
-| ⚠️ **Developmental** | $< 50.0\%$ | $< 50.0\%$ | $< 45.0\%$ |
+### Standar Precision Shooting (FOPI & Riset Disertasi UNP)
+- **Skor Maksimal Teoretis**: 100 Poin (5 poin × 20 lemparan)
+- **Skor Realistis Maksimal**: 60 Poin (3 poin × 20 lemparan di World Games = 100% kapasitas atlet)
+- **Rentang Peraih Medali SEA Games**: 42 s.d 54 Poin
+
+| Capaian Skor | Persentase | Prediksi Medali | Kategori Disertasi | Status Analisis |
+|:---|:---:|:---:|:---:|:---|
+| **$\ge 54$ Poin** | **$\ge 90\%$** | 🥇 **Medali Emas** | **Sangat Baik** | *"Emas berani kita targetkan"* |
+| **$48 - 53$ Poin** | **$80\% - 89\%$** | 🥈 **Medali Perak** | **Baik** | *"Dipastikan medali perak"* |
+| **$42 - 47$ Poin** | **$70\% - 79\%$** | 🥉 **Medali Perunggu** | **Cukup Baik** | *"Bisa bicara medali perunggu"* |
+| **$< 42$ Poin** | **$< 70\%$** | ⚠️ Evaluasi | Kurang | Di bawah rata-rata podium SEA Games |
 
 ---
 
@@ -112,92 +142,100 @@ Based on national and international tournament thresholds referenced in the rese
 
 - **Frontend**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [Vite](https://vitejs.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **Charts & Data Visualization**: [Recharts](https://recharts.org/), [Lucide React](https://lucide.dev/)
-- **Animations**: [Motion](https://motion.dev/)
-- **Backend / Dev Server**: [Express](https://expressjs.com/) with Vite middleware
+- **Visualisasi Data**: [Recharts](https://recharts.org/), [Lucide React](https://lucide.dev/)
+- **Animasi & Transisi**: [Motion](https://motion.dev/)
+- **Penyimpanan**: 100% Client-Side LocalStorage dengan opsi ekspor/impor JSON
+- **Backend / Dev Server**: [Express](https://expressjs.com/) dengan Vite middleware
 - **Deployment**: [Vercel](https://vercel.com/) / Cloud Run Container
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Panduan Memulai (Getting Started)
 
-### Prerequisites
-- Node.js (version 18.x or higher)
-- npm or yarn
+### Kebutuhan Sistem
+- Node.js (versi 18.x atau lebih baru)
+- npm atau yarn
 
-### Installation
+### Instalasi & Menjalankan
 
-1. **Clone the repository**:
+1. **Clone repository**:
    ```bash
    git clone https://github.com/mrbrightsides/rasta.git
    cd rasta
    ```
 
-2. **Install dependencies**:
+2. **Instal dependensi**:
    ```bash
    npm install
    ```
 
-3. **Start the local development server**:
+3. **Jalankan development server**:
    ```bash
    npm run dev
    ```
-   Open your browser at `http://localhost:3000` to access the application.
+   Buka peramban di `http://localhost:3000`.
 
-4. **Build for production**:
+4. **Kompilasi produksi (Build)**:
    ```bash
    npm run build
    ```
 
-5. **Lint and Type Check**:
+5. **Linting & Type Check**:
    ```bash
    npm run lint
    ```
 
 ---
 
-## 📂 Project Structure
+## 📂 Struktur Proyek
 
 ```
 rasta/
-├── public/                     # Static assets & icons
+├── public/
+│   ├── favicon.svg                # Favicon aplikasi RASTA Petanque
+│   └── petanque-logo.png          # Logo resmi UNP & RASTA Petanque
 ├── src/
 │   ├── components/
-│   │   ├── Header.tsx                 # Top navigation and match state header
-│   │   ├── MobileScorer.tsx           # Sideline touch-first scoring console
-│   │   ├── LiveDashboard.tsx          # Real-time game telemetry & end logs
-│   │   ├── TeamFullTime.tsx           # Full-time team performance stats
-│   │   ├── HeadToHead.tsx             # H2H comparison matrices & momentum
-│   │   ├── AthleteAnalytics.tsx       # Individual player metrics & radar view
-│   │   ├── StatisticPerEnd.tsx        # Granular end-by-end analytics
-│   │   ├── ExcelPerformanceSheet.tsx  # Digital Tabel 1.1 with CSV exporter
-│   │   ├── MatchManager.tsx           # Match configuration & presets
-│   │   └── RadarChartComp.tsx         # Recharts radar visualizer
+│   │   ├── Header.tsx                 # Navigasi utama, status live, & modal trigger
+│   │   ├── PrecisionShooting.tsx      # Lembar skor resmi Precision Shooting (FOPI 60P)
+│   │   ├── ExcelPerformanceSheet.tsx  # Replika digital Tabel 1.1 dengan ekspor CSV
+│   │   ├── MobileScorer.tsx           # Konsol pencatat lemparan cepat di tepi lapangan
+│   │   ├── LiveDashboard.tsx          # Telemetri pertandingan live & log kronologis
+│   │   ├── TeamFullTime.tsx           # Analisis tim komprehensif & statistik FIPJP
+│   │   ├── HeadToHead.tsx             # Matriks perbandingan H2H & kurva momentum
+│   │   ├── AthleteAnalytics.tsx       # Profil individu & radar chart Recharts
+│   │   ├── PostMatchReport.tsx        # Laporan komprehensif pasca pertandingan
+│   │   ├── MatchManager.tsx           # Manajemen pertandingan & data riset resmi
+│   │   ├── AcademicFrameworkModal.tsx # Kerangka ilmiah Disertasi S3 UNP (Rasyono)
+│   │   └── LocalStorageModal.tsx      # Kontrol LocalStorage & backup/restore JSON
 │   ├── lib/
-│   │   ├── calculations.ts            # Core RASTA sports math & formulas
-│   │   └── mockData.ts                # Preset demonstration match data
-│   ├── types.ts                       # TypeScript interfaces and domain models
-│   ├── App.tsx                        # Master layout and view routing
-│   ├── main.tsx                       # React application entry point
-│   └── index.css                      # Tailwind CSS root stylesheet
-├── index.html                         # HTML entry template
-├── package.json                       # Project configuration and dependencies
-├── server.ts                          # Express + Vite SSR / API host
-└── README.md                          # Platform documentation
+│   │   ├── api.ts                     # Engine penyimpanan LocalStorage & API bridge
+│   │   ├── calculations.ts            # Rumus matematika performa petanque
+│   │   ├── rasyonoStandards.ts        # Ambang batas prestasi & benchmark SEA Games
+│   │   └── mockData.ts                # Data kanonikal resmi disertasi (Tabel 1.1)
+│   ├── types.ts                       # Definisi antarmuka TypeScript domain petanque
+│   ├── App.tsx                        # Master layout, state management, & routing
+│   ├── main.tsx                       # Entry point aplikasi React
+│   └── index.css                      # Konfigurasi Tailwind CSS v4
+├── index.html                         # Entry HTML dengan metadata RASTA
+├── metadata.json                      # Konfigurasi metadata aplikasi
+├── package.json                       # Dependensi dan script build
+├── server.ts                          # Express server dengan Vite middleware
+└── README.md                          # Dokumentasi lengkap sistem RASTA
 ```
 
 ---
 
-## 📜 Citation & Academic Reference
+## 📜 Sitasi & Referensi Akademik
 
-If you use RASTA Petanque in your research, training program, or sports analytics thesis, please cite:
+Jika Anda menggunakan RASTA Petanque dalam penelitian, skripsi, tesis, disertasi, atau program pelatihan petanque, silakan sitasi:
 
 ```bibtex
 @phdthesis{rasyono2026rasta,
-  title={Pengembangan Model Analisis Kinerja Atlet Petanque Berbasis RASTA (Rasyono Technology Analysis Petanque)},
+  title={Analisis Performa Atlet Berbasis Aplikasi Dalam Permainan Olahraga Petanque (Rasyo Technology Analysis Petanque)},
   author={Rasyono},
   year={2026},
-  school={Program Pascasarjana, Universitas Negeri Padang (UNP)},
+  school={Program Pascasarjana Doktor Ilmu Keolahragaan, Universitas Negeri Padang (UNP)},
   type={Doctoral Dissertation},
   address={Padang, Indonesia}
 }
@@ -205,6 +243,7 @@ If you use RASTA Petanque in your research, training program, or sports analytic
 
 ---
 
-## 📄 License
+## 📄 Hak Cipta & Lisensi
 
-Developed for academic, coaching, and sporting advancement under the direction of **Dr. Rasyono** & team. © 2026 Rasyono Technology Analysis Petanque. All rights reserved.
+Dikembangkan untuk kemajuan akademik, pembinaan prestasi atlet nasional, dan olahraga petanque Indonesia di bawah arahan **Rasyono, S.Pd., M.Pd.** (NIM. 25344021) — Universitas Negeri Padang (UNP).  
+© 2026 RASTA Petanque (Rasyo Technology Analysis Petanque). All rights reserved.

@@ -1,6 +1,6 @@
 {
   "name": "RASTA Petanque",
-  "description": "Rasyono Technology Analysis Petanque - Live sports performance analysis platform for petanque coaches and scorers.",
+  "description": "Rasyo Technology Analysis Petanque - Live sports performance analysis platform for petanque coaches and scorers.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

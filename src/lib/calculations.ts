@@ -10,6 +10,19 @@ import {
 // Standar Jarak Boka Petanque Sesuai Aturan Resmi & Proposal Disertasi Hal 7 (6m - 10m)
 export const DISTANCES: DistanceMeters[] = ['6m', '7m', '8m', '9m', '10m'];
 
+// Daftar lengkap jarak target jack petanque termasuk pecahan 0.5m
+export const ALL_STANDARD_DISTANCES: DistanceMeters[] = [
+  '6m',
+  '6.5m',
+  '7m',
+  '7.5m',
+  '8m',
+  '8.5m',
+  '9m',
+  '9.5m',
+  '10m',
+];
+
 function computeSubRate(succ: number, tot: number): SubTechniqueStats {
   if (tot === 0) {
     return { total: 0, success: 0, rate: '-', rateValue: null };
@@ -191,7 +204,15 @@ export function calculateStatsByDistance(actions: ThrowAction[]): DistanceStatsM
   };
 
   for (const d of DISTANCES) {
-    const subset = actions.filter((a) => a.distance === d);
+    const targetMeter = parseFloat(d);
+    const subset = actions.filter((a) => {
+      if (a.distance === d) return true;
+      const actMeter = parseFloat(a.distance);
+      if (!isNaN(actMeter) && !isNaN(targetMeter)) {
+        return Math.round(actMeter) === targetMeter;
+      }
+      return false;
+    });
     result[d] = calculatePerformance(subset);
   }
 

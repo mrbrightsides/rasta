@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { Match } from '../types';
+import AcademicFrameworkModal from './AcademicFrameworkModal';
+import LocalStorageModal from './LocalStorageModal';
 import {
   Activity,
   Smartphone,
@@ -9,16 +12,22 @@ import {
   Flame,
   RotateCcw,
   FileSpreadsheet,
+  GraduationCap,
+  FileCheck2,
+  Target,
+  HardDrive,
 } from 'lucide-react';
 
 export type NavTab =
   | 'dashboard'
   | 'excel-sheet'
+  | 'precision-shooting'
   | 'scorer'
   | 'team-fulltime'
   | 'stats-per-end'
   | 'athletes'
   | 'head-to-head'
+  | 'post-match-report'
   | 'matches';
 
 interface HeaderProps {
@@ -42,6 +51,8 @@ export default function Header({
   isRealtimeConnected,
   onResetDemo,
 }: HeaderProps) {
+  const [showAcademicModal, setShowAcademicModal] = useState<boolean>(false);
+  const [showStorageModal, setShowStorageModal] = useState<boolean>(false);
   const isMatchLive = match?.status === 'LIVE';
 
   return (
@@ -56,7 +67,7 @@ export default function Header({
           <div className="h-8 w-[1px] bg-white/20 hidden sm:block" />
           <div className="text-sm leading-tight">
             <p className="font-bold text-white tracking-tight">
-              Rasyono Technology Analysis Petanque
+              Rasyo Technology Analysis Petanque
             </p>
             <p className="text-white/70 text-[11px] font-semibold tracking-wider uppercase">
               PROFESSIONAL PERFORMANCE TRACKING
@@ -114,6 +125,28 @@ export default function Header({
             <span>Scorer</span>
           </button>
 
+          {/* Academic Attribution Modal Trigger (Disertasi Rasyono UNP) */}
+          <button
+            id="header-btn-academic"
+            onClick={() => setShowAcademicModal(true)}
+            title="Lihat Kerangka Riset Disertasi Doktor Ilmu Keolahragaan UNP (Rasyono, NIM. 25344021)"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-amber-950 bg-amber-400 hover:bg-amber-300 rounded transition-all shadow-xs border border-amber-300"
+          >
+            <GraduationCap className="w-4 h-4 text-amber-950" />
+            <span>Disertasi UNP</span>
+          </button>
+
+          {/* LocalStorage Status & Control Button */}
+          <button
+            id="header-btn-storage"
+            onClick={() => setShowStorageModal(true)}
+            title="Kelola Data LocalStorage Browser & Cadangan JSON"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 rounded transition-colors border border-emerald-700/60"
+          >
+            <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline">LocalStorage</span>
+          </button>
+
           {/* Reset Demo Button */}
           <button
             id="header-btn-reset"
@@ -156,6 +189,38 @@ export default function Header({
             <span>Lembar Excel Performa</span>
             <span className="bg-amber-300 text-amber-950 text-[9px] font-black px-1.5 py-0.2 rounded">
               EXCEL
+            </span>
+          </button>
+
+          <button
+            id="nav-tab-precision-shooting"
+            onClick={() => setActiveTab('precision-shooting')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all whitespace-nowrap ${
+              activeTab === 'precision-shooting'
+                ? 'bg-amber-300 text-amber-950 font-black shadow-xs ring-2 ring-amber-200'
+                : 'text-amber-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Target className="w-3.5 h-3.5 text-amber-300" />
+            <span>Precision Shooting</span>
+            <span className="bg-amber-400 text-amber-950 text-[9px] font-black px-1.5 py-0.2 rounded">
+              FOPI 60P
+            </span>
+          </button>
+
+          <button
+            id="nav-tab-post-match-report"
+            onClick={() => setActiveTab('post-match-report')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all whitespace-nowrap ${
+              activeTab === 'post-match-report'
+                ? 'bg-emerald-500 text-white font-black shadow-xs ring-2 ring-emerald-300'
+                : 'text-emerald-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <FileCheck2 className="w-3.5 h-3.5 text-emerald-300" />
+            <span>Post-Match Report & Latihan</span>
+            <span className="bg-emerald-400 text-emerald-950 text-[9px] font-black px-1.5 py-0.2 rounded">
+              TAHAP 5
             </span>
           </button>
 
@@ -241,6 +306,18 @@ export default function Header({
           </button>
         </nav>
       </div>
+
+      {/* Academic Framework & Dissertation Slides Modal */}
+      <AcademicFrameworkModal
+        isOpen={showAcademicModal}
+        onClose={() => setShowAcademicModal(false)}
+      />
+
+      {/* LocalStorage Management Modal */}
+      <LocalStorageModal
+        isOpen={showStorageModal}
+        onClose={() => setShowStorageModal(false)}
+      />
     </header>
   );
 }

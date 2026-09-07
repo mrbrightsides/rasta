@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Match, DistanceMeters, Player, Team } from '../types';
+import { Match, DistanceMeters, Player, Team, MatchCategory } from '../types';
 import {
   Plus,
   Flame,
@@ -11,6 +11,8 @@ import {
   Flag,
   Play,
   RotateCcw,
+  Clock,
+  Layers,
 } from 'lucide-react';
 
 interface MatchManagerProps {
@@ -35,9 +37,11 @@ export default function MatchManager({
 
   // Form states
   const [matchName, setMatchName] = useState<string>('National Championship — Singles');
+  const [category, setCategory] = useState<MatchCategory>('TRIPLE_MEN');
   const [matchDate, setMatchDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
+  const [matchTime, setMatchTime] = useState<string>('14:30 WIB');
   const [location, setLocation] = useState<string>('Center Court 1');
   const [targetScore, setTargetScore] = useState<number>(13);
   const [initialDistance, setInitialDistance] = useState<DistanceMeters>('7m');
@@ -49,6 +53,20 @@ export default function MatchManager({
   // Team B
   const [teamBName, setTeamBName] = useState<string>('THAILAND');
   const [playersBStr, setPlayersBStr] = useState<string>('Thanakorn, Ratchata, Sarawut');
+
+  const handleCategoryChange = (newCat: MatchCategory) => {
+    setCategory(newCat);
+    if (newCat.startsWith('SINGLE')) {
+      setPlayersAStr('Heri');
+      setPlayersBStr('Thanakorn');
+    } else if (newCat.startsWith('DOUBLE') || newCat === 'MIXED_DOUBLE') {
+      setPlayersAStr('Heri, Muhlizi');
+      setPlayersBStr('Thanakorn, Ratchata');
+    } else {
+      setPlayersAStr('Heri, Muhlizi, Topan');
+      setPlayersBStr('Thanakorn, Ratchata, Sarawut');
+    }
+  };
 
   const handleCreateSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -93,8 +111,9 @@ export default function MatchManager({
 
       await onCreateMatch({
         name: matchName,
+        category,
         date: matchDate,
-        location,
+        location: `${location} (${matchTime})`,
         targetScore,
         currentDistance: initialDistance,
         teamA,
@@ -374,6 +393,44 @@ export default function MatchManager({
                   onChange={(e) => setMatchName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-slate-900 font-semibold focus:outline-none focus:ring-1 focus:ring-[#002395] focus:border-[#002395]"
                 />
+              </div>
+
+              {/* Kategori Pertandingan Sesuai Slide 14 Disertasi Rasyono */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <Layers className="w-3.5 h-3.5 text-[#002395]" />
+                    <span>Kategori Pertandingan (Slide 14)</span>
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => handleCategoryChange(e.target.value as MatchCategory)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-slate-900 font-semibold focus:outline-none focus:ring-1 focus:ring-[#002395]"
+                  >
+                    <option value="TRIPLE_MEN">Triple Men (3 vs 3 - 2 Boules)</option>
+                    <option value="TRIPLE_WOMEN">Triple Women (3 vs 3 - 2 Boules)</option>
+                    <option value="MIXED_TRIPLE">Mixed Triple (3 vs 3 - 2 Boules)</option>
+                    <option value="DOUBLE_MEN">Double Men (2 vs 2 - 3 Boules)</option>
+                    <option value="DOUBLE_WOMEN">Double Women (2 vs 2 - 3 Boules)</option>
+                    <option value="MIXED_DOUBLE">Mixed Double (2 vs 2 - 3 Boules)</option>
+                    <option value="SINGLE_MEN">Single Men (1 vs 1 - 3 Boules)</option>
+                    <option value="SINGLE_WOMEN">Single Women (1 vs 1 - 3 Boules)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-[#002395]" />
+                    <span>Waktu / Jadwal Pertandingan</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={matchTime}
+                    onChange={(e) => setMatchTime(e.target.value)}
+                    placeholder="Contoh: 14:30 WIB"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-slate-900 font-semibold focus:outline-none focus:ring-1 focus:ring-[#002395]"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

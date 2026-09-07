@@ -64,6 +64,7 @@ export interface ThrowAction {
   bouleNumber?: 1 | 2; // Boule 1 or Boule 2 in this Jack
   scoreValue?: 1 | 0; // 1 = Berhasil, 0 = Gagal (matches Excel format)
   carreau?: boolean; // true if carreau
+  isCarreau?: boolean; // true if carreau (alias)
   pointingTechnique?: PointingTechnique; // Rolling, Half-Lob, High-Lob (Bab II Hal 17-18)
   shootingTechnique?: ShootingTechnique; // Iron, Short Shot, Ground Shot (Bab II Hal 19-21)
   distanceToJackCm?: number; // Distance in cm to jack (for distance control)
@@ -222,4 +223,43 @@ export interface EndStatistic {
   end: EndRound;
   teamAStats: PerformanceStats;
   teamBStats: PerformanceStats;
+}
+
+// ==========================================
+// PRECISION SHOOTING TYPES (FOPI & FIPJP Standards)
+// Sesuai Sheet Resmi "Score Sheet Precision Shooting.xlsx" & Disertasi Rasyono
+// ==========================================
+
+export type PrecisionFigureId = 'fig1' | 'fig2' | 'fig3' | 'fig4' | 'fig5';
+export type PrecisionDistanceMeter = '6.5m' | '7.5m' | '8.5m' | '9.5m';
+export type PrecisionScoreValue = 0 | 1 | 3 | 5;
+
+export type PrecisionRoundStage =
+  | 'Qualification'
+  | '2nd Chance'
+  | 'Quarter Final'
+  | 'Semi Final'
+  | 'Final';
+
+export interface PrecisionFigureMeta {
+  id: PrecisionFigureId;
+  name: string;
+  subName: string;
+  description: string;
+}
+
+export interface PrecisionSheetData {
+  id: string;
+  athleteName: string;
+  kabKota: string;
+  line: string;
+  date: string;
+  eventName: string;
+  stage: PrecisionRoundStage;
+  // Key format: `${figureId}_${distance}` e.g. "fig1_6.5m": 5
+  scores: Record<string, PrecisionScoreValue | null>;
+  refereeSign?: string;
+  athleteSign?: string;
+  notes?: string;
+  createdAt: string;
 }

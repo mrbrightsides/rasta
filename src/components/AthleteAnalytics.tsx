@@ -6,6 +6,10 @@ import {
   getRadarMetrics,
   DISTANCES,
 } from '../lib/calculations';
+import {
+  getRasyonoTier,
+  generatePlayerRasyonoConclusion,
+} from '../lib/rasyonoStandards';
 import RadarChartComp from './RadarChartComp';
 import {
   Users,
@@ -18,6 +22,10 @@ import {
   X,
   ChevronRight,
   ExternalLink,
+  Trophy,
+  GraduationCap,
+  Brain,
+  Dumbbell,
 } from 'lucide-react';
 
 interface AthleteAnalyticsProps {
@@ -98,13 +106,29 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
       display: m.display,
     }));
 
+    const isTeamA = detailPlayer.teamId === match.teamA.id;
+    const teamName = isTeamA ? match.teamA.name : match.teamB.name;
+    const rasyonoConclusion = generatePlayerRasyonoConclusion(
+      detailPlayer.id,
+      detailPlayer.name,
+      detailPlayer.teamId,
+      teamName,
+      detailPlayer.role,
+      overall.pointingSuccess,
+      overall.pointingTotal,
+      overall.shootingSuccess,
+      overall.shootingTotal,
+      overall.carreauCount
+    );
+
     return {
       playerActions,
       overall,
       byDistance,
       radarData,
+      rasyonoConclusion,
     };
-  }, [detailPlayer, match.actions]);
+  }, [detailPlayer, match]);
 
   return (
     <div className="space-y-6">
@@ -247,12 +271,23 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                 <th className="py-2.5 px-3 text-center font-bold">Carreau Rate</th>
                 <th className="py-2.5 px-3 text-center font-bold">Distance Control</th>
                 <th className="py-2.5 px-3 text-center font-bold">Total Throws</th>
+                <th className="py-2.5 px-3 text-center font-bold">Standar Medali</th>
                 <th className="py-2.5 px-4 text-center font-bold">Profile</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredAthletes.map(({ player, overall }) => {
                 const isTeamA = player.teamId === match.teamA.id;
+                const overallPctVal =
+                  overall.totalThrows > 0
+                    ? Math.round(
+                        ((overall.pointingSuccess + overall.shootingSuccess) /
+                          overall.totalThrows) *
+                          1000
+                      ) / 10
+                    : null;
+                const tier = getRasyonoTier(overallPctVal);
+
                 return (
                   <tr
                     key={player.id}
@@ -331,6 +366,20 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                       <span className="block text-[10px] text-green-700 font-bold">
                         {overall.overallAccuracy}
                       </span>
+                    </td>
+
+                    <td className="py-3 px-3 text-center font-mono">
+                      {overallPctVal !== null ? (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded border ${tier.badgeBg} ${tier.badgeText} ${tier.badgeBorder}`}
+                          title={`${tier.fullLabel} (${tier.range})`}
+                        >
+                          <span>{tier.icon}</span>
+                          <span>{tier.medali}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-xs">-</span>
+                      )}
                     </td>
 
                     <td className="py-3 px-4 text-center">
@@ -446,6 +495,74 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                   </div>
                 </div>
               </div>
+
+              {/* Rasyono Academic Performance Benchmark & Coach Conclusion */}
+              {detailData.rasyonoConclusion && (
+                <div
+                  className={`rounded-lg border p-4 text-xs ${detailData.rasyonoConclusion.tier.bgLight} ${detailData.rasyonoConclusion.tier.badgeBorderLight}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-600" />
+                      <span className="font-bold text-slate-900 text-sm">
+                        Evaluasi Performa & Prediksi Medali
+                      </span>
+                      <span className="text-[10px] text-slate-500 bg-white/80 px-2 py-0.5 rounded border border-slate-200">
+                        Disertasi Rasyono (UNP)
+                      </span>
+                    </div>
+
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded border shadow-xs ${detailData.rasyonoConclusion.tier.badgeBg} ${detailData.rasyonoConclusion.tier.badgeText} ${detailData.rasyonoConclusion.tier.badgeBorder}`}
+                    >
+                      <span className="text-sm">{detailData.rasyonoConclusion.tier.icon}</span>
+                      <span>{detailData.rasyonoConclusion.tier.fullLabel}</span>
+                    </span>
+                  </div>
+
+                  {/* Summary & Key Observation */}
+                  <div className="mt-3 bg-white/90 p-2.5 rounded border border-slate-200/80">
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="font-bold text-slate-800">
+                        {detailData.rasyonoConclusion.tier.summaryText}
+                      </span>
+                      <span className="font-semibold text-slate-500">
+                        Peran Dominan: {detailData.rasyonoConclusion.dominantRole}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      {detailData.rasyonoConclusion.keyObservation}
+                    </p>
+                  </div>
+
+                  {/* Tactical & Physical/Mental Recommendations */}
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="bg-white/90 p-2.5 rounded border border-slate-200/80">
+                      <div className="font-bold text-[11px] text-indigo-950 flex items-center gap-1 mb-1">
+                        <Brain className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Analisis Taktikal & Eksekusi:</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        {detailData.rasyonoConclusion.tacticalAdvice}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/90 p-2.5 rounded border border-slate-200/80">
+                      <div className="font-bold text-[11px] text-emerald-950 flex items-center gap-1 mb-1">
+                        <Dumbbell className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Kesiapan Mental & Fisik (Laktat):</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-relaxed">
+                        {detailData.rasyonoConclusion.mentalPhysicalAdvice}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 text-[10px] text-slate-500 italic bg-slate-100/60 p-2 rounded">
+                    Rekomendasi Utama: {detailData.rasyonoConclusion.tier.recommendation}
+                  </div>
+                </div>
+              )}
 
               {/* Breakdown by Distance for this Athlete */}
               <div>

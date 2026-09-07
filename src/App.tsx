@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Match, ThrowAction } from './types';
+import { Match, ThrowAction, DistanceMeters } from './types';
 import {
   fetchMatches,
   recordAction,
@@ -9,6 +9,7 @@ import {
   resetDemo,
   restoreAllDefaultMatches,
   createMatch,
+  updateEndDistance,
   subscribeToMatchUpdates,
   getActiveMatchId,
   setActiveMatchId,
@@ -23,16 +24,20 @@ import AthleteAnalytics from './components/AthleteAnalytics';
 import HeadToHead from './components/HeadToHead';
 import MatchManager from './components/MatchManager';
 import ExcelPerformanceSheet from './components/ExcelPerformanceSheet';
+import PostMatchReport from './components/PostMatchReport';
+import PrecisionShooting from './components/PrecisionShooting';
 import { Smartphone, Monitor, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function App() {
-  // Navigation tab state (supports hash routes e.g. #scorer, #dashboard, #excel-sheet)
+  // Navigation tab state (supports hash routes e.g. #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report)
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const hash = window.location.hash.replace('#', '');
     if (
       [
         'dashboard',
         'excel-sheet',
+        'precision-shooting',
+        'post-match-report',
         'scorer',
         'team-fulltime',
         'stats-per-end',
@@ -201,6 +206,18 @@ export default function App() {
     setActiveMatchId(m.id);
   }, []);
 
+  const handleUpdateEndDistance = useCallback(
+    async (endNumber: number, newDistance: DistanceMeters) => {
+      if (!currentMatch) return;
+      const updated = await updateEndDistance(currentMatch.id, endNumber, newDistance);
+      if (updated) {
+        setCurrentMatch(updated);
+        setMatches((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      }
+    },
+    [currentMatch]
+  );
+
   const handleCreateMatch = useCallback(async (matchData: Partial<Match>) => {
     const created = await createMatch(matchData);
     setMatches((prev) => [created, ...prev]);
@@ -232,12 +249,15 @@ export default function App() {
             matches={matches}
             onRecordAction={handleRecordAction}
             onDeleteAction={handleDeleteAction}
+            onUpdateEndDistance={handleUpdateEndDistance}
             onSwitchToMatch={(mId) => {
               const found = matches.find((m) => m.id === mId);
               if (found) handleSelectMatch(found);
             }}
           />
         )}
+
+        {activeTab === 'precision-shooting' && <PrecisionShooting />}
 
         {activeTab === 'dashboard' && (
           <LiveDashboard
@@ -246,6 +266,15 @@ export default function App() {
             onSelectMatch={handleSelectMatch}
             onNavigateToScorer={() => setActiveTab('scorer')}
             onNavigateToTeamFullTime={() => setActiveTab('team-fulltime')}
+            onNavigateToPostMatch={() => setActiveTab('post-match-report')}
+          />
+        )}
+
+        {activeTab === 'post-match-report' && (
+          <PostMatchReport
+            match={currentMatch}
+            matchesList={matches}
+            onSelectMatch={handleSelectMatch}
           />
         )}
 
@@ -256,6 +285,7 @@ export default function App() {
             onDeleteAction={handleDeleteAction}
             onCompleteEnd={handleCompleteEnd}
             onFinishMatch={handleFinishMatch}
+            onUpdateEndDistance={handleUpdateEndDistance}
           />
         )}
 
@@ -285,7 +315,7 @@ export default function App() {
       <footer className="bg-white border-t border-slate-200 px-6 py-2.5 flex flex-wrap justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[#002395] font-black">RASTA</span>
-          <span>© 2026 Rasyono Technology Analysis Petanque</span>
+          <span>© 2026 Rasyo Technology Analysis Petanque</span>
         </div>
         <div className="hidden sm:block">
           Court #04 • Jakarta International Petanque Arena

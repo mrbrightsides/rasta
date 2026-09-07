@@ -197,6 +197,50 @@ async function startServer() {
     res.json(match);
   });
 
+  // Update target distance for a specific Jack (End)
+  app.patch('/api/matches/:id/ends/:endNumber/distance', (req, res) => {
+    const match = matches.find((m) => m.id === req.params.id);
+    if (!match) {
+      return res.status(404).json({ error: 'Match not found' });
+    }
+    const endNum = parseInt(req.params.endNumber, 10);
+    const { distance } = req.body;
+    if (!distance) {
+      return res.status(400).json({ error: 'Distance is required' });
+    }
+
+    const end = match.ends.find((e) => e.endNumber === endNum);
+    if (end) {
+      end.distance = distance;
+    } else {
+      match.ends.push({
+        id: `end_${Date.now()}_${endNum}`,
+        matchId: match.id,
+        endNumber: endNum,
+        distance,
+        scoreA: 0,
+        scoreB: 0,
+        winnerTeamId: null,
+        isCompleted: false,
+      });
+    }
+
+    // Update distance of all actions in this end
+    match.actions.forEach((act) => {
+      if (act.endNumber === endNum) {
+        act.distance = distance;
+      }
+    });
+
+    if (match.currentEndNumber === endNum) {
+      match.currentDistance = distance;
+    }
+
+    match.updatedAt = Date.now();
+    broadcast('end_distance_updated', { matchId: match.id, endNumber: endNum, distance, match });
+    res.json(match);
+  });
+
   // Finish match manually
   app.post('/api/matches/:id/finish', (req, res) => {
     const match = matches.find((m) => m.id === req.params.id);

@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Match, ThrowAction } from '../types';
+import { Match, ThrowAction, DistanceMeters } from '../types';
+import RasyonoPlayerConclusion from './RasyonoPlayerConclusion';
+import { getRasyonoTier } from '../lib/rasyonoStandards';
 import {
   FileSpreadsheet,
   Download,
@@ -13,6 +15,7 @@ import {
   Users,
   ChevronRight,
   Sparkles,
+  Star,
 } from 'lucide-react';
 
 interface ExcelPerformanceSheetProps {
@@ -20,6 +23,7 @@ interface ExcelPerformanceSheetProps {
   matches?: Match[];
   onRecordAction?: (action: Partial<ThrowAction>) => void;
   onDeleteAction?: (actionId: string) => void;
+  onUpdateEndDistance?: (endNumber: number, distance: DistanceMeters) => void;
   onSwitchToMatch?: (matchId: string) => void;
 }
 
@@ -28,6 +32,8 @@ interface CellData {
   p2?: 1 | 0;
   s1?: 1 | 0;
   s2?: 1 | 0;
+  s1Carreau?: boolean;
+  s2Carreau?: boolean;
   p1ActionId?: string;
   p2ActionId?: string;
   s1ActionId?: string;
@@ -39,6 +45,7 @@ export default function ExcelPerformanceSheet({
   matches = [],
   onRecordAction,
   onDeleteAction,
+  onUpdateEndDistance,
   onSwitchToMatch,
 }: ExcelPerformanceSheetProps) {
   const [selectedJackRange, setSelectedJackRange] = useState<'ALL' | '1-6' | '7-12' | '13+'>('ALL');
@@ -92,9 +99,11 @@ export default function ExcelPerformanceSheet({
       } else if (act.actionType === 'SHOOTING') {
         if (cell.s1 === undefined) {
           cell.s1 = val;
+          cell.s1Carreau = !!(act.carreau || act.isCarreau);
           cell.s1ActionId = act.id;
         } else if (cell.s2 === undefined) {
           cell.s2 = val;
+          cell.s2Carreau = !!(act.carreau || act.isCarreau);
           cell.s2ActionId = act.id;
         }
       }
@@ -238,47 +247,96 @@ export default function ExcelPerformanceSheet({
     actionType: 'POINTING' | 'SHOOTING',
     slot: 1 | 2,
     currentVal?: 1 | 0,
-    actionId?: string
+    actionId?: string,
+    isCurrentCarreau?: boolean
   ) => {
     if (!onRecordAction) return;
 
     const endObj = ends.find((e) => e.endNumber === endNum);
     const dist = endObj?.distance || '7.5m';
 
-    // Cycle: undefined -> 1 -> 0 -> undefined (delete)
-    if (currentVal === undefined) {
-      // Record 1 (Success)
-      onRecordAction({
-        playerId,
-        playerName,
-        teamId,
-        endNumber: endNum,
-        actionType,
-        distance: dist,
-        result: 'SUCCESS',
-        scoreValue: 1,
-        bouleNumber: slot,
-      });
-    } else if (currentVal === 1) {
-      // Switch to 0 (Fail)
-      if (actionId && onDeleteAction) {
-        onDeleteAction(actionId);
+    if (actionType === 'POINTING') {
+      // Pointing Cycle: undefined -> 1 -> 0 -> undefined (delete)
+      if (currentVal === undefined) {
+        onRecordAction({
+          playerId,
+          playerName,
+          teamId,
+          endNumber: endNum,
+          actionType,
+          distance: dist,
+          result: 'SUCCESS',
+          scoreValue: 1,
+          bouleNumber: slot,
+        });
+      } else if (currentVal === 1) {
+        if (actionId && onDeleteAction) onDeleteAction(actionId);
+        onRecordAction({
+          playerId,
+          playerName,
+          teamId,
+          endNumber: endNum,
+          actionType,
+          distance: dist,
+          result: 'FAIL',
+          scoreValue: 0,
+          bouleNumber: slot,
+        });
+      } else if (currentVal === 0) {
+        if (actionId && onDeleteAction) onDeleteAction(actionId);
       }
-      onRecordAction({
-        playerId,
-        playerName,
-        teamId,
-        endNumber: endNum,
-        actionType,
-        distance: dist,
-        result: 'FAIL',
-        scoreValue: 0,
-        bouleNumber: slot,
-      });
-    } else if (currentVal === 0) {
-      // Delete throw (make blank)
-      if (actionId && onDeleteAction) {
-        onDeleteAction(actionId);
+    } else {
+      // Shooting Cycle:
+      // undefined (Kosong) -> 1 (Hit Biasa) -> 1★ (CARREAU / Boule Pengganti) -> 0 (Gagal) -> undefined (Kosong)
+      if (currentVal === undefined) {
+        onRecordAction({
+          playerId,
+          playerName,
+          teamId,
+          endNumber: endNum,
+          actionType,
+          distance: dist,
+          result: 'SUCCESS',
+          carreau: false,
+          isCarreau: false,
+          scoreValue: 1,
+          bouleNumber: slot,
+        });
+      } else if (currentVal === 1 && !isCurrentCarreau) {
+        // Upgrade to 1★ (Carreau)
+        if (actionId && onDeleteAction) onDeleteAction(actionId);
+        onRecordAction({
+          playerId,
+          playerName,
+          teamId,
+          endNumber: endNum,
+          actionType,
+          distance: dist,
+          result: 'SUCCESS',
+          carreau: true,
+          isCarreau: true,
+          scoreValue: 1,
+          bouleNumber: slot,
+        });
+      } else if (currentVal === 1 && isCurrentCarreau) {
+        // Switch to 0 (Gagal / Meleset)
+        if (actionId && onDeleteAction) onDeleteAction(actionId);
+        onRecordAction({
+          playerId,
+          playerName,
+          teamId,
+          endNumber: endNum,
+          actionType,
+          distance: dist,
+          result: 'FAIL',
+          carreau: false,
+          isCarreau: false,
+          scoreValue: 0,
+          bouleNumber: slot,
+        });
+      } else if (currentVal === 0) {
+        // Delete / Blank
+        if (actionId && onDeleteAction) onDeleteAction(actionId);
       }
     }
   };
@@ -564,12 +622,12 @@ export default function ExcelPerformanceSheet({
         {/* Left / Main Table: Jack Details (xl:col-span-8) */}
         <div className="xl:col-span-8 bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           <div className="bg-[#FFF2CC] border-b border-amber-300 px-4 py-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-amber-950 uppercase tracking-wider font-mono">
                 DETAIL LEMPARAN PER JACK (END)
               </span>
-              <span className="text-[11px] bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded font-semibold">
-                Klik kotak untuk ubah (1 ➔ 0 ➔ Hapus)
+              <span className="text-[11px] bg-amber-200/80 text-amber-950 px-2.5 py-0.5 rounded-full font-semibold border border-amber-300">
+                Pointing: 1 ➔ 0 ➔ Hapus | Shooting: 1 ➔ 1★ (Carreau) ➔ 0 ➔ Hapus | Ubah Jarak Langsung di Header
               </span>
             </div>
             <span className="text-[11px] font-mono text-amber-900 font-bold">
@@ -592,11 +650,26 @@ export default function ExcelPerformanceSheet({
                       <th
                         key={`jack-${num}`}
                         colSpan={5}
-                        className="p-1.5 text-center border-r border-amber-300 text-[11px] whitespace-nowrap"
+                        className="p-1.5 text-center border-r border-amber-300 text-[11px] whitespace-nowrap bg-amber-100/60 hover:bg-amber-100 transition-colors"
                       >
-                        <div>JACK KE {num}</div>
-                        <div className="text-[10px] font-normal text-amber-800">
-                          JARAK {dist.replace('m', '')}
+                        <div className="font-extrabold text-slate-900">JACK KE {num}</div>
+                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                          <label htmlFor={`jack-dist-${num}`} className="text-[10px] font-bold text-amber-900">
+                            JARAK
+                          </label>
+                          <select
+                            id={`jack-dist-${num}`}
+                            value={dist}
+                            onChange={(e) => onUpdateEndDistance?.(num, e.target.value as DistanceMeters)}
+                            className="bg-white text-slate-900 text-[11px] font-mono font-bold border border-amber-300 rounded px-1.5 py-0.5 shadow-2xs hover:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none cursor-pointer"
+                            title={`Ubah jarak Jack Ke-${num} (kinerja pemain berdasar jarak akan otomatis dihitung)`}
+                          >
+                            {['6m', '6.5m', '7m', '7.5m', '8m', '8.5m', '9m', '9.5m', '10m'].map((d) => (
+                              <option key={d} value={d}>
+                                {d.replace('m', '')} m
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </th>
                     );
@@ -746,19 +819,42 @@ export default function ExcelPerformanceSheet({
                                   'SHOOTING',
                                   1,
                                   cell.s1,
-                                  cell.s1ActionId
+                                  cell.s1ActionId,
+                                  cell.s1Carreau
                                 )
                               }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
                                 cell.s1 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                  ? cell.s1Carreau
+                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
                                   : cell.s1 === 0
                                   ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
                                   : 'text-slate-300 hover:bg-slate-100'
                               }`}
-                              title={`Shooting 1 - ${player.name} (Jack ${num})`}
+                              title={
+                                cell.s1 === 1
+                                  ? cell.s1Carreau
+                                    ? `Shooting 1 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                    : `Shooting 1 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                  : cell.s1 === 0
+                                  ? `Shooting 1 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                  : `Klik untuk isi Shooting 1: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                              }
                             >
-                              {cell.s1 !== undefined ? cell.s1 : ''}
+                              {cell.s1 === 1 ? (
+                                cell.s1Carreau ? (
+                                  <span className="inline-flex items-center justify-center font-black">
+                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                  </span>
+                                ) : (
+                                  '1'
+                                )
+                              ) : cell.s1 === 0 ? (
+                                '0'
+                              ) : (
+                                ''
+                              )}
                             </td>
 
                             {/* Shooting 2 */}
@@ -772,19 +868,42 @@ export default function ExcelPerformanceSheet({
                                   'SHOOTING',
                                   2,
                                   cell.s2,
-                                  cell.s2ActionId
+                                  cell.s2ActionId,
+                                  cell.s2Carreau
                                 )
                               }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
                                 cell.s2 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                  ? cell.s2Carreau
+                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
                                   : cell.s2 === 0
                                   ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
                                   : 'text-slate-300 hover:bg-slate-100'
                               }`}
-                              title={`Shooting 2 - ${player.name} (Jack ${num})`}
+                              title={
+                                cell.s2 === 1
+                                  ? cell.s2Carreau
+                                    ? `Shooting 2 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                    : `Shooting 2 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                  : cell.s2 === 0
+                                  ? `Shooting 2 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                  : `Klik untuk isi Shooting 2: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                              }
                             >
-                              {cell.s2 !== undefined ? cell.s2 : ''}
+                              {cell.s2 === 1 ? (
+                                cell.s2Carreau ? (
+                                  <span className="inline-flex items-center justify-center font-black">
+                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                  </span>
+                                ) : (
+                                  '1'
+                                )
+                              ) : cell.s2 === 0 ? (
+                                '0'
+                              ) : (
+                                ''
+                              )}
                             </td>
 
                             {/* SKOR (Running Score for Jack) */}
@@ -912,19 +1031,42 @@ export default function ExcelPerformanceSheet({
                                   'SHOOTING',
                                   1,
                                   cell.s1,
-                                  cell.s1ActionId
+                                  cell.s1ActionId,
+                                  cell.s1Carreau
                                 )
                               }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
                                 cell.s1 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                  ? cell.s1Carreau
+                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
                                   : cell.s1 === 0
                                   ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
                                   : 'text-slate-300 hover:bg-slate-100'
                               }`}
-                              title={`Shooting 1 - ${player.name} (Jack ${num})`}
+                              title={
+                                cell.s1 === 1
+                                  ? cell.s1Carreau
+                                    ? `Shooting 1 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                    : `Shooting 1 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                  : cell.s1 === 0
+                                  ? `Shooting 1 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                  : `Klik untuk isi Shooting 1: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                              }
                             >
-                              {cell.s1 !== undefined ? cell.s1 : ''}
+                              {cell.s1 === 1 ? (
+                                cell.s1Carreau ? (
+                                  <span className="inline-flex items-center justify-center font-black">
+                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                  </span>
+                                ) : (
+                                  '1'
+                                )
+                              ) : cell.s1 === 0 ? (
+                                '0'
+                              ) : (
+                                ''
+                              )}
                             </td>
 
                             {/* Shooting 2 */}
@@ -938,19 +1080,42 @@ export default function ExcelPerformanceSheet({
                                   'SHOOTING',
                                   2,
                                   cell.s2,
-                                  cell.s2ActionId
+                                  cell.s2ActionId,
+                                  cell.s2Carreau
                                 )
                               }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
                                 cell.s2 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                  ? cell.s2Carreau
+                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
                                   : cell.s2 === 0
                                   ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
                                   : 'text-slate-300 hover:bg-slate-100'
                               }`}
-                              title={`Shooting 2 - ${player.name} (Jack ${num})`}
+                              title={
+                                cell.s2 === 1
+                                  ? cell.s2Carreau
+                                    ? `Shooting 2 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                    : `Shooting 2 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                  : cell.s2 === 0
+                                  ? `Shooting 2 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                  : `Klik untuk isi Shooting 2: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                              }
                             >
-                              {cell.s2 !== undefined ? cell.s2 : ''}
+                              {cell.s2 === 1 ? (
+                                cell.s2Carreau ? (
+                                  <span className="inline-flex items-center justify-center font-black">
+                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                  </span>
+                                ) : (
+                                  '1'
+                                )
+                              ) : cell.s2 === 0 ? (
+                                '0'
+                              ) : (
+                                ''
+                              )}
                             </td>
 
                             {/* SKOR */}
@@ -1007,6 +1172,9 @@ export default function ExcelPerformanceSheet({
                   </th>
                   <th colSpan={2} className="p-1 border-r border-amber-300 bg-emerald-100 text-emerald-950">
                     PERFORMA TEAM
+                  </th>
+                  <th rowSpan={2} className="p-1 border-r border-amber-300 bg-amber-100 text-amber-950 font-black text-[10px]" title="Standar Analisis Medali by Rasyono (UNP)">
+                    MEDALI (RASYONO)
                   </th>
                   <th rowSpan={2} className="p-2 bg-amber-300 text-amber-950 font-black w-12">
                     SKOR
@@ -1112,6 +1280,35 @@ export default function ExcelPerformanceSheet({
                         </td>
                       )}
 
+                      {/* Standar Medali Rasyono (Individual Player) */}
+                      {(() => {
+                        const totSucc = (st?.pointSuccess ?? 0) + (st?.shootingSuccess ?? 0);
+                        const totThrows = (st?.pointTotal ?? 0) + (st?.shootingTotal ?? 0);
+                        const pPct = totThrows > 0 ? Math.round((totSucc / totThrows) * 1000) / 10 : null;
+                        const pTier = getRasyonoTier(pPct);
+
+                        return (
+                          <td className="p-1 border-r border-amber-200 bg-amber-50/30 text-center align-middle">
+                            {pPct !== null ? (
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded border ${pTier.badgeBg} ${pTier.badgeText} ${pTier.badgeBorder}`}
+                                  title={`${pTier.fullLabel} (${pTier.range})`}
+                                >
+                                  <span>{pTier.icon}</span>
+                                  <span>{pTier.medali}</span>
+                                </span>
+                                <span className="text-[9px] font-mono font-bold text-slate-500">
+                                  {pPct}%
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300 text-[10px]">-</span>
+                            )}
+                          </td>
+                        );
+                      })()}
+
                       {/* Team A Score (span 3 rows) */}
                       {isFirst && (
                         <td
@@ -1195,6 +1392,35 @@ export default function ExcelPerformanceSheet({
                         </td>
                       )}
 
+                      {/* Standar Medali Rasyono (Individual Player) */}
+                      {(() => {
+                        const totSucc = (st?.pointSuccess ?? 0) + (st?.shootingSuccess ?? 0);
+                        const totThrows = (st?.pointTotal ?? 0) + (st?.shootingTotal ?? 0);
+                        const pPct = totThrows > 0 ? Math.round((totSucc / totThrows) * 1000) / 10 : null;
+                        const pTier = getRasyonoTier(pPct);
+
+                        return (
+                          <td className="p-1 border-r border-amber-200 bg-amber-50/30 text-center align-middle">
+                            {pPct !== null ? (
+                              <div className="flex flex-col items-center justify-center gap-0.5">
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded border ${pTier.badgeBg} ${pTier.badgeText} ${pTier.badgeBorder}`}
+                                  title={`${pTier.fullLabel} (${pTier.range})`}
+                                >
+                                  <span>{pTier.icon}</span>
+                                  <span>{pTier.medali}</span>
+                                </span>
+                                <span className="text-[9px] font-mono font-bold text-slate-500">
+                                  {pPct}%
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300 text-[10px]">-</span>
+                            )}
+                          </td>
+                        );
+                      })()}
+
                       {/* Team B Score (span 3 rows) */}
                       {isFirst && (
                         <td
@@ -1232,6 +1458,14 @@ export default function ExcelPerformanceSheet({
             </p>
           </div>
         </div>
+      </div>
+
+      {/* 4. Standar Analisis Performa & Kesimpulan Per Pemain (Disertasi Rasyono - UNP) */}
+      <div className="pt-2">
+        <RasyonoPlayerConclusion
+          match={match}
+          playerStatsMap={performanceStats.playerStatsMap}
+        />
       </div>
     </div>
   );

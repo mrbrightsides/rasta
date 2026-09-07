@@ -9,7 +9,7 @@ import {
   PointingTechnique,
   ShootingTechnique,
 } from '../types';
-import { DISTANCES, calculateEndBouleCounts } from '../lib/calculations';
+import { DISTANCES, ALL_STANDARD_DISTANCES, calculateEndBouleCounts } from '../lib/calculations';
 import {
   CheckCircle2,
   XCircle,
@@ -33,6 +33,7 @@ interface MobileScorerProps {
     nextDistance: string
   ) => Promise<any>;
   onFinishMatch: () => Promise<any>;
+  onUpdateEndDistance?: (endNumber: number, distance: DistanceMeters) => Promise<any> | void;
 }
 
 export default function MobileScorer({
@@ -41,6 +42,7 @@ export default function MobileScorer({
   onDeleteAction,
   onCompleteEnd,
   onFinishMatch,
+  onUpdateEndDistance,
 }: MobileScorerProps) {
   // Active throw selection states
   const [selectedTeamId, setSelectedTeamId] = useState<string>(match.teamA.id);
@@ -490,19 +492,25 @@ export default function MobileScorer({
           <div className="flex items-center justify-between mb-2.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
               <div className="w-1 h-3.5 bg-[#002395]" />
-              <span>4. Target Distance</span>
+              <span>4. Target Distance (Jarak Jack)</span>
             </label>
-            <span className="text-[11px] font-bold text-[#002395] bg-blue-50 px-2 py-0.5 rounded">
-              Current: {distance}
+            <span className="text-[11px] font-bold text-[#002395] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+              End #{match.currentEndNumber}: {distance}
             </span>
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {DISTANCES.map((d) => (
+
+          {/* Granular Distance Grid: 6m to 10m with 0.5m intervals */}
+          <div className="grid grid-cols-5 sm:grid-cols-9 gap-1.5 mb-2">
+            {ALL_STANDARD_DISTANCES.map((d) => (
               <button
                 key={d}
                 id={`scorer-distance-${d}`}
-                onClick={() => setDistance(d)}
-                className={`py-2.5 rounded-lg font-mono font-black text-sm text-center border transition-all ${
+                type="button"
+                onClick={() => {
+                  setDistance(d);
+                  onUpdateEndDistance?.(match.currentEndNumber, d);
+                }}
+                className={`py-2 rounded-lg font-mono font-bold text-xs text-center border transition-all ${
                   distance === d
                     ? 'bg-[#002395] text-white border-[#002395] shadow-xs'
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -512,6 +520,9 @@ export default function MobileScorer({
               </button>
             ))}
           </div>
+          <p className="text-[10px] text-slate-400 font-medium">
+            Jarak dapat disesuaikan relatif sesuai lemparan Jack. Performa per jarak akan otomatis terkalkulasi.
+          </p>
         </div>
 
         {/* STEP 5: RESULT ([ SUCCESS ] vs [ FAIL ]) */}

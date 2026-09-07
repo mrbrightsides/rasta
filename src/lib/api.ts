@@ -1,4 +1,4 @@
-import { Match, ThrowAction, EndRound } from '../types';
+import { Match, ThrowAction, EndRound, DistanceMeters } from '../types';
 import {
   getDefaultMatches,
   createDemoMatch,
@@ -9,10 +9,11 @@ import {
 const ALL_MATCHES_STORAGE_KEY = 'rasta_petanque_all_matches_v2';
 const ACTIVE_MATCH_ID_KEY = 'rasta_petanque_active_match_id_v2';
 const LEGACY_STORAGE_KEY = 'rasta_petanque_active_match';
+const PRECISION_STORAGE_KEY = 'rasta_precision_shooting_sheets_v1';
 
 /**
  * Reads matches from localStorage.
- * Guarantees that the 3 canonical research & demo matches are always present:
+ * Guarantees that the canonical research & demo matches are always present:
  * 1. Tabel 1.1 Triple Men (20 Okt 2025)
  * 2. Mixed Triple (26 Okt 2025)
  * 3. SEA Games 2025 Final (Men Triples)
@@ -62,7 +63,7 @@ export function getStoredMatches(): Match[] {
 
     return list;
   } catch (err) {
-    console.warn('Error reading stored matches:', err);
+    console.warn('Error reading stored matches from localStorage:', err);
     return defaultMatches;
   }
 }
@@ -71,7 +72,7 @@ export function saveStoredMatches(matches: Match[]): void {
   try {
     localStorage.setItem(ALL_MATCHES_STORAGE_KEY, JSON.stringify(matches));
   } catch (err) {
-    console.warn('Error saving stored matches:', err);
+    console.warn('Error saving stored matches to localStorage:', err);
   }
 }
 
@@ -105,7 +106,15 @@ function updateMatchInStorage(updatedMatch: Match): void {
   setActiveMatchId(updatedMatch.id);
 }
 
+/**
+ * Returns matches directly from localStorage (localStorage-first)
+ */
 export async function fetchMatches(): Promise<Match[]> {
+  const localList = getStoredMatches();
+  if (localList && localList.length > 0) {
+    return localList;
+  }
+
   try {
     const res = await fetch('/api/matches');
     if (res.ok) {
@@ -119,12 +128,16 @@ export async function fetchMatches(): Promise<Match[]> {
       }
     }
   } catch (err) {
-    console.warn('Backend fetch failed, using local stored matches:', err);
+    console.warn('Backend fetch failed, using localStorage matches:', err);
   }
-  return getStoredMatches();
+  return localList;
 }
 
 export async function fetchMatchById(id: string): Promise<Match> {
+  const list = getStoredMatches();
+  const match = list.find((m) => m.id === id);
+  if (match) return match;
+
   try {
     const res = await fetch(`/api/matches/${id}`);
     if (res.ok) {
@@ -137,31 +150,10 @@ export async function fetchMatchById(id: string): Promise<Match> {
   } catch (err) {
     console.warn('Backend fetch failed, using local match:', err);
   }
-  const list = getStoredMatches();
-  const match = list.find((m) => m.id === id);
-  return match || list[0] || createTripleMenMatch();
+  return list[0] || createTripleMenMatch();
 }
 
 export async function createMatch(matchData: Partial<Match>): Promise<Match> {
-  try {
-    const res = await fetch('/api/matches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(matchData),
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        updateMatchInStorage(data);
-        return data;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend create failed, saving locally:', err);
-  }
-
-  // Local fallback
   const initialEnd: EndRound = {
     id: `end_${Date.now()}_1`,
     matchId: `match_${Date.now()}`,
@@ -192,7 +184,18 @@ export async function createMatch(matchData: Partial<Match>): Promise<Match> {
     updatedAt: Date.now(),
   };
 
+  // 100% saved immediately in localStorage
   updateMatchInStorage(newMatch);
+
+  // Background sync if backend is active
+  fetch('/api/matches', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newMatch),
+  }).catch(() => {
+    // silently ignore since localStorage is primary
+  });
+
   return newMatch;
 }
 
@@ -200,25 +203,6 @@ export async function recordAction(
   matchId: string,
   actionData: Partial<ThrowAction>
 ): Promise<{ action: ThrowAction; match: Match }> {
-  try {
-    const res = await fetch(`/api/matches/${matchId}/actions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(actionData),
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        updateMatchInStorage(data.match);
-        return data;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend action record failed, using local update:', err);
-  }
-
-  // Local fallback
   const list = getStoredMatches();
   let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
 
@@ -249,27 +233,22 @@ export async function recordAction(
     updatedAt: Date.now(),
   };
 
+  // Immediately saved in localStorage
   updateMatchInStorage(match);
+
+  // Background broadcast/sync
+  fetch(`/api/matches/${matchId}/actions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(actionData),
+  }).catch(() => {
+    // ignore
+  });
+
   return { action: newAction, match };
 }
 
 export async function deleteAction(matchId: string, actionId: string): Promise<Match> {
-  try {
-    const res = await fetch(`/api/matches/${matchId}/actions/${actionId}`, {
-      method: 'DELETE',
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        updateMatchInStorage(data.match);
-        return data.match;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend delete failed, fallback local:', err);
-  }
-
   const list = getStoredMatches();
   let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
   match = {
@@ -277,7 +256,16 @@ export async function deleteAction(matchId: string, actionId: string): Promise<M
     actions: match.actions.filter((a) => a.id !== actionId),
     updatedAt: Date.now(),
   };
+
+  // Immediately saved in localStorage
   updateMatchInStorage(match);
+
+  fetch(`/api/matches/${matchId}/actions/${actionId}`, {
+    method: 'DELETE',
+  }).catch(() => {
+    // ignore
+  });
+
   return match;
 }
 
@@ -288,26 +276,9 @@ export async function completeEnd(
   scoreB: number,
   nextDistance: string
 ): Promise<Match> {
-  try {
-    const res = await fetch(`/api/matches/${matchId}/ends/complete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ endNumber, scoreA, scoreB, nextDistance }),
-    });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const match = await res.json();
-        updateMatchInStorage(match);
-        return match;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend complete end failed, local fallback:', err);
-  }
-
   const list = getStoredMatches();
   let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+
   const updatedEnds = match.ends.map((e) => {
     if (e.endNumber === endNumber) {
       return {
@@ -350,25 +321,75 @@ export async function completeEnd(
     updatedAt: Date.now(),
   };
 
+  // Immediately saved in localStorage
   updateMatchInStorage(match);
+
+  fetch(`/api/matches/${matchId}/ends/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endNumber, scoreA, scoreB, nextDistance }),
+  }).catch(() => {
+    // ignore
+  });
+
+  return match;
+}
+
+/**
+ * Updates target distance in an end and saves immediately in localStorage
+ */
+export async function updateEndDistance(
+  matchId: string,
+  endNumber: number,
+  newDistance: DistanceMeters
+): Promise<Match> {
+  const list = getStoredMatches();
+  let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
+
+  const existingEnd = match.ends.find((e) => e.endNumber === endNumber);
+  let ends = [...match.ends];
+  if (existingEnd) {
+    ends = ends.map((e) => (e.endNumber === endNumber ? { ...e, distance: newDistance } : e));
+  } else {
+    ends.push({
+      id: `end_${Date.now()}_${endNumber}`,
+      matchId: match.id,
+      endNumber,
+      distance: newDistance,
+      scoreA: 0,
+      scoreB: 0,
+      winnerTeamId: null,
+      isCompleted: false,
+    });
+  }
+
+  const actions = match.actions.map((act) =>
+    act.endNumber === endNumber ? { ...act, distance: newDistance } : act
+  );
+
+  match = {
+    ...match,
+    ends,
+    actions,
+    currentDistance: endNumber === match.currentEndNumber ? newDistance : match.currentDistance,
+    updatedAt: Date.now(),
+  };
+
+  // Immediately saved in localStorage
+  updateMatchInStorage(match);
+
+  fetch(`/api/matches/${matchId}/ends/${endNumber}/distance`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ distance: newDistance }),
+  }).catch(() => {
+    // ignore
+  });
+
   return match;
 }
 
 export async function finishMatch(matchId: string): Promise<Match> {
-  try {
-    const res = await fetch(`/api/matches/${matchId}/finish`, { method: 'POST' });
-    if (res.ok) {
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const match = await res.json();
-        updateMatchInStorage(match);
-        return match;
-      }
-    }
-  } catch (err) {
-    console.warn('Finish match failed, local fallback:', err);
-  }
-
   const list = getStoredMatches();
   let match = list.find((m) => m.id === matchId) || list[0] || createTripleMenMatch();
   match = {
@@ -376,8 +397,105 @@ export async function finishMatch(matchId: string): Promise<Match> {
     status: 'FINISHED',
     updatedAt: Date.now(),
   };
+
   updateMatchInStorage(match);
+
+  fetch(`/api/matches/${matchId}/finish`, { method: 'POST' }).catch(() => {
+    // ignore
+  });
+
   return match;
+}
+
+/**
+ * Exports all local data (matches + precision shooting) as a JSON string
+ */
+export function exportAllLocalStorageBackup(): string {
+  const matches = getStoredMatches();
+  const precisionRaw = localStorage.getItem(PRECISION_STORAGE_KEY) || '[]';
+  let precisionSheets = [];
+  try {
+    precisionSheets = JSON.parse(precisionRaw);
+  } catch {
+    // ignore
+  }
+
+  const backupObj = {
+    appName: 'Rasyo Technology Analysis Petanque',
+    backupDate: new Date().toISOString(),
+    version: '2.0.0',
+    data: {
+      matches,
+      activeMatchId: getActiveMatchId(),
+      precisionShootingSheets: precisionSheets,
+    },
+  };
+
+  return JSON.stringify(backupObj, null, 2);
+}
+
+/**
+ * Imports full local data JSON back into localStorage
+ */
+export function importLocalStorageBackup(jsonString: string): boolean {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (parsed && parsed.data) {
+      if (Array.isArray(parsed.data.matches)) {
+        saveStoredMatches(parsed.data.matches);
+      }
+      if (parsed.data.activeMatchId) {
+        setActiveMatchId(parsed.data.activeMatchId);
+      }
+      if (Array.isArray(parsed.data.precisionShootingSheets)) {
+        localStorage.setItem(
+          PRECISION_STORAGE_KEY,
+          JSON.stringify(parsed.data.precisionShootingSheets)
+        );
+      }
+      return true;
+    }
+  } catch (err) {
+    console.error('Import failed:', err);
+  }
+  return false;
+}
+
+/**
+ * Returns summary metrics of localStorage usage
+ */
+export function getLocalStorageMetrics() {
+  const matches = getStoredMatches();
+  const precisionRaw = localStorage.getItem(PRECISION_STORAGE_KEY) || '[]';
+  let precisionCount = 0;
+  try {
+    const parsed = JSON.parse(precisionRaw);
+    if (Array.isArray(parsed)) precisionCount = parsed.length;
+  } catch {
+    // ignore
+  }
+
+  let totalChars = 0;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const val = localStorage.getItem(key);
+        totalChars += (key.length + (val ? val.length : 0));
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const approxKb = Math.round((totalChars * 2) / 1024);
+
+  return {
+    matchesCount: matches.length,
+    precisionSheetsCount: precisionCount,
+    approximateKb: approxKb,
+    storageType: 'localStorage (Offline Browser Storage)',
+  };
 }
 
 /**
