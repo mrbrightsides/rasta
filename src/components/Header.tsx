@@ -17,9 +17,11 @@ import {
   Target,
   HardDrive,
   Plus,
+  Home,
 } from 'lucide-react';
 
 export type NavTab =
+  | 'landing'
   | 'dashboard'
   | 'excel-sheet'
   | 'precision-shooting'
@@ -61,13 +63,17 @@ export default function Header({
       {/* 1. Main Brand Header (Professional Polish Deep Navy #002395) */}
       <div className="bg-[#002395] text-white px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
         {/* Logo & Platform Name */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="bg-white text-[#002395] font-black px-3 py-1 rounded text-2xl tracking-tighter font-['Outfit'] shadow-xs select-none">
+        <div
+          onClick={() => setActiveTab('landing')}
+          className="flex items-center gap-3 sm:gap-4 cursor-pointer group"
+          title="Beranda RASTA Petanque (Landing Page)"
+        >
+          <div className="bg-white text-[#002395] font-black px-3 py-1 rounded text-2xl tracking-tighter font-['Outfit'] shadow-xs select-none group-hover:bg-amber-300 transition-colors">
             RASTA
           </div>
           <div className="h-8 w-[1px] bg-white/20 hidden sm:block" />
           <div className="text-sm leading-tight">
-            <p className="font-bold text-white tracking-tight">
+            <p className="font-bold text-white tracking-tight group-hover:text-blue-200 transition-colors">
               Rasyo Technology Analysis Petanque
             </p>
             <p className="text-white/70 text-[11px] font-semibold tracking-wider uppercase">
@@ -175,6 +181,19 @@ export default function Header({
       {/* 2. Professional Navigation Ribbon (Deep Dark Accent #001c77) */}
       <div className="bg-[#001c77] border-t border-white/10 px-4 sm:px-6 py-1.5">
         <nav className="max-w-7xl mx-auto flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs font-semibold">
+          <button
+            id="nav-tab-landing"
+            onClick={() => setActiveTab('landing')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all whitespace-nowrap ${
+              activeTab === 'landing'
+                ? 'bg-white text-[#002395] font-bold shadow-xs'
+                : 'text-white/80 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Beranda</span>
+          </button>
+
           <button
             id="nav-tab-dashboard"
             onClick={() => setActiveTab('dashboard')}

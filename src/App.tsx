@@ -26,14 +26,16 @@ import MatchManager from './components/MatchManager';
 import ExcelPerformanceSheet from './components/ExcelPerformanceSheet';
 import PostMatchReport from './components/PostMatchReport';
 import PrecisionShooting from './components/PrecisionShooting';
+import LandingPage from './components/LandingPage';
 import { Smartphone, Monitor, Sparkles, RefreshCw } from 'lucide-react';
 
 export default function App() {
-  // Navigation tab state (supports hash routes e.g. #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report)
+  // Navigation tab state (supports hash routes e.g. #landing, #scorer, #dashboard, #excel-sheet, #precision-shooting, #post-match-report)
   const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const hash = window.location.hash.replace('#', '');
     if (
       [
+        'landing',
         'dashboard',
         'excel-sheet',
         'precision-shooting',
@@ -243,6 +245,10 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+        {activeTab === 'landing' && (
+          <LandingPage onNavigate={setActiveTab} />
+        )}
+
         {activeTab === 'excel-sheet' && (
           <ExcelPerformanceSheet
             match={currentMatch}
