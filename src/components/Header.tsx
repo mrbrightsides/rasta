@@ -191,7 +191,7 @@ export default function Header({
             }`}
           >
             <Home className="w-3.5 h-3.5" />
-            <span>Beranda</span>
+            <span>Landing Page</span>
           </button>
 
           <button

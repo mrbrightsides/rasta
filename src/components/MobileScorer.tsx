@@ -9,7 +9,12 @@ import {
   PointingTechnique,
   ShootingTechnique,
 } from '../types';
-import { DISTANCES, ALL_STANDARD_DISTANCES, calculateEndBouleCounts } from '../lib/calculations';
+import {
+  DISTANCES,
+  ALL_STANDARD_DISTANCES,
+  calculateEndBouleCounts,
+  getCategoryBouleInfo,
+} from '../lib/calculations';
 import {
   CheckCircle2,
   XCircle,
@@ -70,16 +75,24 @@ export default function MobileScorer({
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [justSaved, setJustSaved] = useState<boolean>(false);
 
-  // Live End Boule Tracking (Triples: 6 boules per team per end)
+  // Dynamic Boule Counting Logic (Single & Double: 3 boules, Triple: 2 boules per athlete)
+  const bouleInfo = useMemo(() => {
+    return getCategoryBouleInfo(match.category);
+  }, [match.category]);
+
+  const maxBoulesPerTeam = bouleInfo.totalBoulesPerTeam;
+  const boulesPerAthlete = bouleInfo.boulesPerAthlete;
+
+  // Live End Boule Tracking
   const bouleCounts = useMemo(() => {
     return calculateEndBouleCounts(
       match.actions,
       match.currentEndNumber,
       match.teamA.id,
       match.teamB.id,
-      6
+      maxBoulesPerTeam
     );
-  }, [match.actions, match.currentEndNumber, match.teamA.id, match.teamB.id]);
+  }, [match.actions, match.currentEndNumber, match.teamA.id, match.teamB.id, maxBoulesPerTeam]);
 
   // Available players based on selected team
   const currentTeam = selectedTeamId === match.teamA.id ? match.teamA : match.teamB;
@@ -122,7 +135,10 @@ export default function MobileScorer({
           ? parseFloat(distanceToJackCm)
           : undefined;
 
-      const calculatedBouleNumber = (selectedPlayerEndThrows.length + 1) as 1 | 2;
+      const calculatedBouleNumber = Math.min(
+        selectedPlayerEndThrows.length + 1,
+        boulesPerAthlete
+      ) as 1 | 2 | 3;
 
       await onRecordAction({
         endNumber: match.currentEndNumber,
@@ -133,7 +149,7 @@ export default function MobileScorer({
         distance,
         result,
         scoreValue: result === 'SUCCESS' ? 1 : 0,
-        bouleNumber: calculatedBouleNumber <= 2 ? calculatedBouleNumber : 2,
+        bouleNumber: calculatedBouleNumber,
         carreau: actionType === 'SHOOTING' && result === 'SUCCESS' ? isCarreau : false,
         pointingTechnique: actionType === 'POINTING' ? pointingTechnique : undefined,
         shootingTechnique: actionType === 'SHOOTING' ? shootingTechnique : undefined,
@@ -217,7 +233,7 @@ export default function MobileScorer({
                 {match.teamA.name}
               </p>
               <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
-                {bouleCounts.teamA.thrown}/6 bosi
+                {bouleCounts.teamA.thrown}/{maxBoulesPerTeam} bosi
               </span>
             </div>
             <p className="text-4xl sm:text-5xl font-black text-[#002395] font-mono tracking-tight mt-0.5">
@@ -243,7 +259,10 @@ export default function MobileScorer({
               {match.currentEndNumber}
             </span>
             <span className="text-[10px] font-mono font-bold text-slate-400 block">
-              {bouleCounts.totalThrown}/12 bosi
+              {bouleCounts.totalThrown}/{maxBoulesPerTeam * 2} bosi
+            </span>
+            <span className="inline-block mt-0.5 text-[9px] font-mono font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+              {boulesPerAthlete} Bola/Org
             </span>
           </div>
 
@@ -261,7 +280,7 @@ export default function MobileScorer({
                 {match.teamB.name}
               </p>
               <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">
-                {bouleCounts.teamB.thrown}/6 bosi
+                {bouleCounts.teamB.thrown}/{maxBoulesPerTeam} bosi
               </span>
             </div>
             <p className="text-4xl sm:text-5xl font-black text-[#ED2939] font-mono tracking-tight mt-0.5">
@@ -285,6 +304,10 @@ export default function MobileScorer({
             <span>First to {match.targetScore} pts</span>
             <span>•</span>
             <span className="font-bold text-slate-700 font-mono">{match.currentDistance} Jack</span>
+            <span>•</span>
+            <span className="font-mono text-[11px] text-slate-600 font-bold bg-slate-100 px-1.5 py-0.5 rounded">
+              {bouleInfo.label}: {boulesPerAthlete} Bola/Atlet
+            </span>
           </div>
 
           <button
@@ -347,13 +370,13 @@ export default function MobileScorer({
               {selectedPlayer && (
                 <span
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
-                    selectedPlayerEndThrows.length >= 2
+                    selectedPlayerEndThrows.length >= boulesPerAthlete
                       ? 'bg-amber-100 text-amber-900 border border-amber-300'
                       : 'bg-slate-100 text-slate-700'
                   }`}
                 >
-                  Boule {Math.min(selectedPlayerEndThrows.length + 1, 2)} of 2
-                  {selectedPlayerEndThrows.length >= 2 && ' (Limit)'}
+                  Boule {Math.min(selectedPlayerEndThrows.length + 1, boulesPerAthlete)} of {boulesPerAthlete}
+                  {selectedPlayerEndThrows.length >= boulesPerAthlete && ' (Limit)'}
                 </span>
               )}
             </span>
@@ -382,7 +405,9 @@ export default function MobileScorer({
                 >
                   <div className="flex items-center justify-between w-full text-[10px] opacity-80 mb-0.5">
                     <span className="truncate">{player.role || 'Athlete'}</span>
-                    <span className="font-mono font-bold">{playerThrowsThisEnd}/2</span>
+                    <span className="font-mono font-bold">
+                      {playerThrowsThisEnd}/{boulesPerAthlete}
+                    </span>
                   </div>
                   <span className="text-sm font-black truncate w-full">{player.name}</span>
                 </button>

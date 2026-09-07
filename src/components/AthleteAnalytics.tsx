@@ -271,7 +271,7 @@ export default function AthleteAnalytics({ match }: AthleteAnalyticsProps) {
                 <th className="py-2.5 px-3 text-center font-bold">Carreau Rate</th>
                 <th className="py-2.5 px-3 text-center font-bold">Distance Target</th>
                 <th className="py-2.5 px-3 text-center font-bold">Total Throws</th>
-                <th className="py-2.5 px-3 text-center font-bold">Standar Medali</th>
+                <th className="py-2.5 px-3 text-center font-bold">Standar</th>
                 <th className="py-2.5 px-4 text-center font-bold">Profile</th>
               </tr>
             </thead>

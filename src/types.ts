@@ -61,7 +61,7 @@ export interface ThrowAction {
   actionType: ActionType;
   distance: DistanceMeters;
   result: ActionResult;
-  bouleNumber?: 1 | 2; // Boule 1 or Boule 2 in this Jack
+  bouleNumber?: 1 | 2 | 3; // Boule 1, 2, atau 3 per atlet (Single & Double: 3 bola, Triple: 2 bola)
   scoreValue?: 1 | 0; // 1 = Berhasil, 0 = Gagal (matches Excel format)
   carreau?: boolean; // true if carreau
   isCarreau?: boolean; // true if carreau (alias)

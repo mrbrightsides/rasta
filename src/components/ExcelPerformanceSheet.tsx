@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Match, ThrowAction, DistanceMeters } from '../types';
 import RasyonoPlayerConclusion from './RasyonoPlayerConclusion';
 import { getRasyonoTier } from '../lib/rasyonoStandards';
+import { getCategoryBouleInfo } from '../lib/calculations';
 import {
   FileSpreadsheet,
   Download,
@@ -16,6 +17,7 @@ import {
   ChevronRight,
   Sparkles,
   Star,
+  Layers,
 } from 'lucide-react';
 
 interface ExcelPerformanceSheetProps {
@@ -30,14 +32,19 @@ interface ExcelPerformanceSheetProps {
 interface CellData {
   p1?: 1 | 0;
   p2?: 1 | 0;
+  p3?: 1 | 0;
   s1?: 1 | 0;
   s2?: 1 | 0;
+  s3?: 1 | 0;
   s1Carreau?: boolean;
   s2Carreau?: boolean;
+  s3Carreau?: boolean;
   p1ActionId?: string;
   p2ActionId?: string;
+  p3ActionId?: string;
   s1ActionId?: string;
   s2ActionId?: string;
+  s3ActionId?: string;
 }
 
 export default function ExcelPerformanceSheet({
@@ -55,6 +62,24 @@ export default function ExcelPerformanceSheet({
   const teamAPlayers = match.teamA.players;
   const teamBPlayers = match.teamB.players;
   const allPlayers = [...teamAPlayers, ...teamBPlayers];
+
+  // Aturan resmi Petanque & Disertasi Rasyono: Single & Double = 3 bola, Triple = 2 bola per atlet
+  const autoBouleInfo = useMemo(() => {
+    return getCategoryBouleInfo(match.category, teamAPlayers.length);
+  }, [match.category, teamAPlayers.length]);
+
+  // Coach can keep Auto (recommended) or explicitly toggle between Triple (2 bola) and Single/Double (3 bola)
+  const [overrideFormat, setOverrideFormat] = useState<'AUTO' | 'TRIPLE_2' | 'SINGLE_DOUBLE_3'>('AUTO');
+
+  const boulesPerAthlete: 2 | 3 = useMemo(() => {
+    if (overrideFormat === 'TRIPLE_2') return 2;
+    if (overrideFormat === 'SINGLE_DOUBLE_3') return 3;
+    return autoBouleInfo.boulesPerAthlete as 2 | 3;
+  }, [overrideFormat, autoBouleInfo.boulesPerAthlete]);
+
+  const bouleSlots: (1 | 2 | 3)[] = useMemo(() => {
+    return boulesPerAthlete === 3 ? [1, 2, 3] : [1, 2];
+  }, [boulesPerAthlete]);
 
   // Derive ends
   const ends = match.ends || [];
@@ -95,6 +120,9 @@ export default function ExcelPerformanceSheet({
         } else if (cell.p2 === undefined) {
           cell.p2 = val;
           cell.p2ActionId = act.id;
+        } else if (cell.p3 === undefined) {
+          cell.p3 = val;
+          cell.p3ActionId = act.id;
         }
       } else if (act.actionType === 'SHOOTING') {
         if (cell.s1 === undefined) {
@@ -105,6 +133,10 @@ export default function ExcelPerformanceSheet({
           cell.s2 = val;
           cell.s2Carreau = !!(act.carreau || act.isCarreau);
           cell.s2ActionId = act.id;
+        } else if (cell.s3 === undefined) {
+          cell.s3 = val;
+          cell.s3Carreau = !!(act.carreau || act.isCarreau);
+          cell.s3ActionId = act.id;
         }
       }
       pMap.set(act.endNumber, cell);
@@ -144,6 +176,10 @@ export default function ExcelPerformanceSheet({
             pTotal++;
             if (cell.p2 === 1) pSuccess++;
           }
+          if (cell.p3 !== undefined) {
+            pTotal++;
+            if (cell.p3 === 1) pSuccess++;
+          }
           if (cell.s1 !== undefined) {
             sTotal++;
             if (cell.s1 === 1) sSuccess++;
@@ -151,6 +187,10 @@ export default function ExcelPerformanceSheet({
           if (cell.s2 !== undefined) {
             sTotal++;
             if (cell.s2 === 1) sSuccess++;
+          }
+          if (cell.s3 !== undefined) {
+            sTotal++;
+            if (cell.s3 === 1) sSuccess++;
           }
         });
       }
@@ -245,7 +285,7 @@ export default function ExcelPerformanceSheet({
     teamId: string,
     endNum: number,
     actionType: 'POINTING' | 'SHOOTING',
-    slot: 1 | 2,
+    slot: 1 | 2 | 3,
     currentVal?: 1 | 0,
     actionId?: string,
     isCurrentCarreau?: boolean
@@ -377,7 +417,9 @@ export default function ExcelPerformanceSheet({
     const jackCols = displayedEndNumbers.map((num) => {
       const endObj = ends.find((e) => e.endNumber === num);
       const dist = endObj?.distance || '7.5m';
-      return `JACK ${num} (${dist}) [P1;P2;S1;S2;SKOR]`;
+      return boulesPerAthlete === 3
+        ? `JACK ${num} (${dist}) [P1;P2;P3;S1;S2;S3;SKOR]`
+        : `JACK ${num} (${dist}) [P1;P2;S1;S2;SKOR]`;
     });
     lines.push(`NAMA,TIM,${jackCols.join(',')}`);
 
@@ -387,11 +429,15 @@ export default function ExcelPerformanceSheet({
         const cell = pMap?.get(num) || {};
         const p1 = cell.p1 !== undefined ? cell.p1 : '';
         const p2 = cell.p2 !== undefined ? cell.p2 : '';
+        const p3 = cell.p3 !== undefined ? cell.p3 : '';
         const s1 = cell.s1 !== undefined ? cell.s1 : '';
         const s2 = cell.s2 !== undefined ? cell.s2 : '';
+        const s3 = cell.s3 !== undefined ? cell.s3 : '';
         const endObj = ends.find((e) => e.endNumber === num);
         const score = p.teamId === match.teamA.id ? endObj?.runningScoreA ?? '' : endObj?.runningScoreB ?? '';
-        return `"${p1};${p2};${s1};${s2};${score}"`;
+        return boulesPerAthlete === 3
+          ? `"${p1};${p2};${p3};${s1};${s2};${s3};${score}"`
+          : `"${p1};${p2};${s1};${s2};${score}"`;
       });
       const teamName = p.teamId === match.teamA.id ? match.teamA.name : match.teamB.name;
       lines.push(`${p.name},${teamName},${rowCols.join(',')}`);
@@ -501,6 +547,47 @@ export default function ExcelPerformanceSheet({
             </button>
           </div>
 
+          {/* Boule Format Selector (Single & Double: 3 Bola, Triple: 2 Bola) */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
+            <span className="text-[10px] uppercase font-bold text-slate-500 px-2 flex items-center gap-1">
+              <Layers className="w-3 h-3 text-[#002395]" />
+              <span>Bola:</span>
+            </span>
+            <button
+              onClick={() => setOverrideFormat('AUTO')}
+              className={`px-2.5 py-1.5 rounded-md transition-all ${
+                overrideFormat === 'AUTO'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title={`Otomatis dari kategori match: ${autoBouleInfo.label} (${autoBouleInfo.boulesPerAthlete} bola per atlet)`}
+            >
+              Auto ({autoBouleInfo.boulesPerAthlete} Bola)
+            </button>
+            <button
+              onClick={() => setOverrideFormat('TRIPLE_2')}
+              className={`px-2.5 py-1.5 rounded-md transition-all ${
+                overrideFormat === 'TRIPLE_2'
+                  ? 'bg-[#002395] text-white shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Triple: 2 bola per atlet (P1, P2 & S1, S2)"
+            >
+              Triple (2 Bola)
+            </button>
+            <button
+              onClick={() => setOverrideFormat('SINGLE_DOUBLE_3')}
+              className={`px-2.5 py-1.5 rounded-md transition-all ${
+                overrideFormat === 'SINGLE_DOUBLE_3'
+                  ? 'bg-[#002395] text-white shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Single & Double: 3 bola per atlet (P1, P2, P3 & S1, S2, S3)"
+            >
+              Single/Double (3 Bola)
+            </button>
+          </div>
+
           <button
             onClick={() => setShowFormulaGuide(!showFormulaGuide)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors"
@@ -551,15 +638,26 @@ export default function ExcelPerformanceSheet({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
                 {/* 1. Nilai Lemparan */}
                 <div className="bg-white rounded-lg p-3 border border-amber-200/80 shadow-2xs">
-                  <span className="font-bold text-slate-900 block mb-1">
-                    1. Input Lemparan (Boule 1 & 2)
-                  </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-slate-900 block">
+                      1. Input Lemparan ({boulesPerAthlete === 3 ? 'Boule 1, 2 & 3' : 'Boule 1 & 2'})
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-blue-100 text-blue-900">
+                      {boulesPerAthlete === 3 ? 'Single/Double: 3 Bola' : 'Triple: 2 Bola'}
+                    </span>
+                  </div>
                   <ul className="space-y-1 text-[11px] text-slate-600">
                     <li className="flex items-center gap-1.5">
                       <span className="w-4 h-4 rounded bg-emerald-100 text-emerald-800 font-mono font-bold flex items-center justify-center text-[10px]">
                         1
                       </span>
                       <span><strong>Berhasil</strong> (masuk target / hit)</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded bg-amber-300 text-amber-950 font-mono font-black flex items-center justify-center text-[10px]">
+                        1★
+                      </span>
+                      <span><strong>Carreau</strong> (Shooting boule pengganti)</span>
                     </li>
                     <li className="flex items-center gap-1.5">
                       <span className="w-4 h-4 rounded bg-rose-100 text-rose-800 font-mono font-bold flex items-center justify-center text-[10px]">
@@ -649,7 +747,7 @@ export default function ExcelPerformanceSheet({
                     return (
                       <th
                         key={`jack-${num}`}
-                        colSpan={5}
+                        colSpan={boulesPerAthlete * 2 + 1}
                         className="p-1.5 text-center border-r border-amber-300 text-[11px] whitespace-nowrap bg-amber-100/60 hover:bg-amber-100 transition-colors"
                       >
                         <div className="font-extrabold text-slate-900">JACK KE {num}</div>
@@ -679,25 +777,31 @@ export default function ExcelPerformanceSheet({
                   </th>
                 </tr>
 
-                {/* Row 2: Sub-headers: POINT (1, 2) | SHOOTING (1, 2) | SKOR */}
+                {/* Row 2: Sub-headers: POINT (P1..Pn) | SHOOTING (S1..Sn) | SKOR */}
                 <tr className="bg-amber-100/70 text-amber-900 border-b border-amber-300 text-[10px] font-mono font-bold">
                   <th className="p-1.5 border-r border-amber-300 sticky left-0 bg-amber-100/90 z-10">
                     Kategori
                   </th>
                   {displayedEndNumbers.map((num) => (
                     <React.Fragment key={`sub-${num}`}>
-                      <th className="p-1 text-center border-r border-amber-200 bg-blue-50/50 text-blue-900 w-7">
-                        P1
-                      </th>
-                      <th className="p-1 text-center border-r border-amber-200 bg-blue-50/50 text-blue-900 w-7">
-                        P2
-                      </th>
-                      <th className="p-1 text-center border-r border-amber-200 bg-rose-50/50 text-rose-900 w-7">
-                        S1
-                      </th>
-                      <th className="p-1 text-center border-r border-amber-200 bg-rose-50/50 text-rose-900 w-7">
-                        S2
-                      </th>
+                      {bouleSlots.map((slot) => (
+                        <th
+                          key={`sub-p-${slot}-${num}`}
+                          className="p-1 text-center border-r border-amber-200 bg-blue-50/50 text-blue-900 w-7"
+                          title={`Pointing Boule ${slot}`}
+                        >
+                          P{slot}
+                        </th>
+                      ))}
+                      {bouleSlots.map((slot) => (
+                        <th
+                          key={`sub-s-${slot}-${num}`}
+                          className="p-1 text-center border-r border-amber-200 bg-rose-50/50 text-rose-900 w-7"
+                          title={`Shooting Boule ${slot}`}
+                        >
+                          S{slot}
+                        </th>
+                      ))}
                       <th className="p-1 text-center border-r border-amber-300 bg-amber-200/60 text-amber-950 font-black w-8">
                         SKOR
                       </th>
@@ -722,10 +826,10 @@ export default function ExcelPerformanceSheet({
                 {/* TEAM A SECTION */}
                 <tr className="bg-slate-100/80 border-b border-slate-200 font-bold text-slate-700">
                   <td
-                    colSpan={1 + displayedEndNumbers.length * 5 + 4}
+                    colSpan={1 + displayedEndNumbers.length * (boulesPerAthlete * 2 + 1) + 4}
                     className="p-1.5 px-3 text-[11px] uppercase tracking-wider bg-blue-900 text-white font-bold"
                   >
-                    REGU A: {match.teamA.name}
+                    REGU A: {match.teamA.name} ({boulesPerAthlete} Bola/Atlet)
                   </td>
                 </tr>
 
@@ -756,155 +860,100 @@ export default function ExcelPerformanceSheet({
 
                         return (
                           <React.Fragment key={`cell-${player.id}-${num}`}>
-                            {/* Point 1 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'POINTING',
-                                  1,
-                                  cell.p1,
-                                  cell.p1ActionId
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
-                                cell.p1 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.p1 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={`Point 1 - ${player.name} (Jack ${num})`}
-                            >
-                              {cell.p1 !== undefined ? cell.p1 : ''}
-                            </td>
+                            {/* Pointing Slots (P1, P2, and optional P3) */}
+                            {bouleSlots.map((slot) => {
+                              const val = slot === 1 ? cell.p1 : slot === 2 ? cell.p2 : cell.p3;
+                              const actionId =
+                                slot === 1 ? cell.p1ActionId : slot === 2 ? cell.p2ActionId : cell.p3ActionId;
 
-                            {/* Point 2 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'POINTING',
-                                  2,
-                                  cell.p2,
-                                  cell.p2ActionId
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
-                                cell.p2 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.p2 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={`Point 2 - ${player.name} (Jack ${num})`}
-                            >
-                              {cell.p2 !== undefined ? cell.p2 : ''}
-                            </td>
+                              return (
+                                <td
+                                  key={`point-${slot}-${player.id}-${num}`}
+                                  onClick={() =>
+                                    handleCellClick(
+                                      player.id,
+                                      player.name,
+                                      player.teamId,
+                                      num,
+                                      'POINTING',
+                                      slot,
+                                      val,
+                                      actionId
+                                    )
+                                  }
+                                  className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                                    val === 1
+                                      ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                      : val === 0
+                                      ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
+                                      : 'text-slate-300 hover:bg-slate-100'
+                                  }`}
+                                  title={`Point ${slot} - ${player.name} (Jack ${num})`}
+                                >
+                                  {val !== undefined ? val : ''}
+                                </td>
+                              );
+                            })}
 
-                            {/* Shooting 1 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'SHOOTING',
-                                  1,
-                                  cell.s1,
-                                  cell.s1ActionId,
-                                  cell.s1Carreau
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
-                                cell.s1 === 1
-                                  ? cell.s1Carreau
-                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
-                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.s1 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={
-                                cell.s1 === 1
-                                  ? cell.s1Carreau
-                                    ? `Shooting 1 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
-                                    : `Shooting 1 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
-                                  : cell.s1 === 0
-                                  ? `Shooting 1 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
-                                  : `Klik untuk isi Shooting 1: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
-                              }
-                            >
-                              {cell.s1 === 1 ? (
-                                cell.s1Carreau ? (
-                                  <span className="inline-flex items-center justify-center font-black">
-                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
-                                  </span>
-                                ) : (
-                                  '1'
-                                )
-                              ) : cell.s1 === 0 ? (
-                                '0'
-                              ) : (
-                                ''
-                              )}
-                            </td>
+                            {/* Shooting Slots (S1, S2, and optional S3) */}
+                            {bouleSlots.map((slot) => {
+                              const val = slot === 1 ? cell.s1 : slot === 2 ? cell.s2 : cell.s3;
+                              const actionId =
+                                slot === 1 ? cell.s1ActionId : slot === 2 ? cell.s2ActionId : cell.s3ActionId;
+                              const isCarreau =
+                                slot === 1 ? cell.s1Carreau : slot === 2 ? cell.s2Carreau : cell.s3Carreau;
 
-                            {/* Shooting 2 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'SHOOTING',
-                                  2,
-                                  cell.s2,
-                                  cell.s2ActionId,
-                                  cell.s2Carreau
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
-                                cell.s2 === 1
-                                  ? cell.s2Carreau
-                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
-                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.s2 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={
-                                cell.s2 === 1
-                                  ? cell.s2Carreau
-                                    ? `Shooting 2 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
-                                    : `Shooting 2 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
-                                  : cell.s2 === 0
-                                  ? `Shooting 2 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
-                                  : `Klik untuk isi Shooting 2: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
-                              }
-                            >
-                              {cell.s2 === 1 ? (
-                                cell.s2Carreau ? (
-                                  <span className="inline-flex items-center justify-center font-black">
-                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
-                                  </span>
-                                ) : (
-                                  '1'
-                                )
-                              ) : cell.s2 === 0 ? (
-                                '0'
-                              ) : (
-                                ''
-                              )}
-                            </td>
+                              return (
+                                <td
+                                  key={`shoot-${slot}-${player.id}-${num}`}
+                                  onClick={() =>
+                                    handleCellClick(
+                                      player.id,
+                                      player.name,
+                                      player.teamId,
+                                      num,
+                                      'SHOOTING',
+                                      slot,
+                                      val,
+                                      actionId,
+                                      isCarreau
+                                    )
+                                  }
+                                  className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
+                                    val === 1
+                                      ? isCarreau
+                                        ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                        : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                      : val === 0
+                                      ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
+                                      : 'text-slate-300 hover:bg-slate-100'
+                                  }`}
+                                  title={
+                                    val === 1
+                                      ? isCarreau
+                                        ? `Shooting ${slot} - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                        : `Shooting ${slot} - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                      : val === 0
+                                      ? `Shooting ${slot} - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                      : `Klik untuk isi Shooting ${slot}: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                                  }
+                                >
+                                  {val === 1 ? (
+                                    isCarreau ? (
+                                      <span className="inline-flex items-center justify-center font-black">
+                                        1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                      </span>
+                                    ) : (
+                                      '1'
+                                    )
+                                  ) : val === 0 ? (
+                                    '0'
+                                  ) : (
+                                    ''
+                                  )}
+                                </td>
+                              );
+                            })}
 
                             {/* SKOR (Running Score for Jack) */}
                             <td className="p-1 text-center border-r border-amber-200 bg-amber-50/60 font-black text-slate-800 text-[11px]">
@@ -934,10 +983,10 @@ export default function ExcelPerformanceSheet({
                 {/* TEAM B SECTION */}
                 <tr className="bg-slate-100/80 border-b border-slate-200 font-bold text-slate-700">
                   <td
-                    colSpan={1 + displayedEndNumbers.length * 5 + 4}
+                    colSpan={1 + displayedEndNumbers.length * (boulesPerAthlete * 2 + 1) + 4}
                     className="p-1.5 px-3 text-[11px] uppercase tracking-wider bg-rose-900 text-white font-bold"
                   >
-                    REGU B: {match.teamB.name}
+                    REGU B: {match.teamB.name} ({boulesPerAthlete} Bola/Atlet)
                   </td>
                 </tr>
 
@@ -968,155 +1017,100 @@ export default function ExcelPerformanceSheet({
 
                         return (
                           <React.Fragment key={`cell-${player.id}-${num}`}>
-                            {/* Point 1 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'POINTING',
-                                  1,
-                                  cell.p1,
-                                  cell.p1ActionId
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
-                                cell.p1 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.p1 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={`Point 1 - ${player.name} (Jack ${num})`}
-                            >
-                              {cell.p1 !== undefined ? cell.p1 : ''}
-                            </td>
+                            {/* Pointing Slots (P1, P2, and optional P3) */}
+                            {bouleSlots.map((slot) => {
+                              const val = slot === 1 ? cell.p1 : slot === 2 ? cell.p2 : cell.p3;
+                              const actionId =
+                                slot === 1 ? cell.p1ActionId : slot === 2 ? cell.p2ActionId : cell.p3ActionId;
 
-                            {/* Point 2 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'POINTING',
-                                  2,
-                                  cell.p2,
-                                  cell.p2ActionId
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
-                                cell.p2 === 1
-                                  ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.p2 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={`Point 2 - ${player.name} (Jack ${num})`}
-                            >
-                              {cell.p2 !== undefined ? cell.p2 : ''}
-                            </td>
+                              return (
+                                <td
+                                  key={`point-${slot}-${player.id}-${num}`}
+                                  onClick={() =>
+                                    handleCellClick(
+                                      player.id,
+                                      player.name,
+                                      player.teamId,
+                                      num,
+                                      'POINTING',
+                                      slot,
+                                      val,
+                                      actionId
+                                    )
+                                  }
+                                  className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors ${
+                                    val === 1
+                                      ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                      : val === 0
+                                      ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
+                                      : 'text-slate-300 hover:bg-slate-100'
+                                  }`}
+                                  title={`Point ${slot} - ${player.name} (Jack ${num})`}
+                                >
+                                  {val !== undefined ? val : ''}
+                                </td>
+                              );
+                            })}
 
-                            {/* Shooting 1 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'SHOOTING',
-                                  1,
-                                  cell.s1,
-                                  cell.s1ActionId,
-                                  cell.s1Carreau
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
-                                cell.s1 === 1
-                                  ? cell.s1Carreau
-                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
-                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.s1 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={
-                                cell.s1 === 1
-                                  ? cell.s1Carreau
-                                    ? `Shooting 1 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
-                                    : `Shooting 1 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
-                                  : cell.s1 === 0
-                                  ? `Shooting 1 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
-                                  : `Klik untuk isi Shooting 1: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
-                              }
-                            >
-                              {cell.s1 === 1 ? (
-                                cell.s1Carreau ? (
-                                  <span className="inline-flex items-center justify-center font-black">
-                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
-                                  </span>
-                                ) : (
-                                  '1'
-                                )
-                              ) : cell.s1 === 0 ? (
-                                '0'
-                              ) : (
-                                ''
-                              )}
-                            </td>
+                            {/* Shooting Slots (S1, S2, and optional S3) */}
+                            {bouleSlots.map((slot) => {
+                              const val = slot === 1 ? cell.s1 : slot === 2 ? cell.s2 : cell.s3;
+                              const actionId =
+                                slot === 1 ? cell.s1ActionId : slot === 2 ? cell.s2ActionId : cell.s3ActionId;
+                              const isCarreau =
+                                slot === 1 ? cell.s1Carreau : slot === 2 ? cell.s2Carreau : cell.s3Carreau;
 
-                            {/* Shooting 2 */}
-                            <td
-                              onClick={() =>
-                                handleCellClick(
-                                  player.id,
-                                  player.name,
-                                  player.teamId,
-                                  num,
-                                  'SHOOTING',
-                                  2,
-                                  cell.s2,
-                                  cell.s2ActionId,
-                                  cell.s2Carreau
-                                )
-                              }
-                              className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
-                                cell.s2 === 1
-                                  ? cell.s2Carreau
-                                    ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
-                                    : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
-                                  : cell.s2 === 0
-                                  ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
-                                  : 'text-slate-300 hover:bg-slate-100'
-                              }`}
-                              title={
-                                cell.s2 === 1
-                                  ? cell.s2Carreau
-                                    ? `Shooting 2 - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
-                                    : `Shooting 2 - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
-                                  : cell.s2 === 0
-                                  ? `Shooting 2 - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
-                                  : `Klik untuk isi Shooting 2: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
-                              }
-                            >
-                              {cell.s2 === 1 ? (
-                                cell.s2Carreau ? (
-                                  <span className="inline-flex items-center justify-center font-black">
-                                    1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
-                                  </span>
-                                ) : (
-                                  '1'
-                                )
-                              ) : cell.s2 === 0 ? (
-                                '0'
-                              ) : (
-                                ''
-                              )}
-                            </td>
+                              return (
+                                <td
+                                  key={`shoot-${slot}-${player.id}-${num}`}
+                                  onClick={() =>
+                                    handleCellClick(
+                                      player.id,
+                                      player.name,
+                                      player.teamId,
+                                      num,
+                                      'SHOOTING',
+                                      slot,
+                                      val,
+                                      actionId,
+                                      isCarreau
+                                    )
+                                  }
+                                  className={`p-1 text-center border-r border-slate-200 cursor-pointer text-[11px] font-bold transition-colors select-none ${
+                                    val === 1
+                                      ? isCarreau
+                                        ? 'bg-amber-300 text-amber-950 font-black hover:bg-amber-400 border border-amber-400 ring-1 ring-amber-400'
+                                        : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'
+                                      : val === 0
+                                      ? 'bg-rose-100/70 text-rose-900 hover:bg-rose-200'
+                                      : 'text-slate-300 hover:bg-slate-100'
+                                  }`}
+                                  title={
+                                    val === 1
+                                      ? isCarreau
+                                        ? `Shooting ${slot} - ${player.name} (Jack ${num}): 1★ CARREAU (Boule Pengganti). Klik untuk ubah jadi 0 (Gagal).`
+                                        : `Shooting ${slot} - ${player.name} (Jack ${num}): 1 (Hit Biasa). Klik untuk ubah jadi 1★ (Carreau).`
+                                      : val === 0
+                                      ? `Shooting ${slot} - ${player.name} (Jack ${num}): 0 (Gagal). Klik untuk hapus.`
+                                      : `Klik untuk isi Shooting ${slot}: 1 (Hit) ➔ 1★ (Carreau) ➔ 0 (Gagal)`
+                                  }
+                                >
+                                  {val === 1 ? (
+                                    isCarreau ? (
+                                      <span className="inline-flex items-center justify-center font-black">
+                                        1<span className="text-[10px] text-amber-900 ml-0.5">★</span>
+                                      </span>
+                                    ) : (
+                                      '1'
+                                    )
+                                  ) : val === 0 ? (
+                                    '0'
+                                  ) : (
+                                    ''
+                                  )}
+                                </td>
+                              );
+                            })}
 
                             {/* SKOR */}
                             <td className="p-1 text-center border-r border-amber-200 bg-amber-50/60 font-black text-slate-800 text-[11px]">

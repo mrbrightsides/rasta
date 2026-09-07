@@ -183,7 +183,7 @@ Mental & Fisik: ${p.mentalPhysicalAdvice}`;
                       <td className="py-2.5 px-4 flex items-center gap-2">
                         <span className="text-base">🥉</span>
                         <span className="font-bold text-orange-950 bg-orange-100/80 px-2.5 py-0.5 rounded text-[11px] border border-orange-200">
-                          PERUNGGU / CUKUP BAIK
+                          CUKUP
                         </span>
                       </td>
                     </tr>
@@ -195,7 +195,7 @@ Mental & Fisik: ${p.mentalPhysicalAdvice}`;
                       <td className="py-2.5 px-4 flex items-center gap-2">
                         <span className="text-base">🥈</span>
                         <span className="font-bold text-slate-900 bg-slate-200/80 px-2.5 py-0.5 rounded text-[11px] border border-slate-300">
-                          PERAK / BAIK
+                          BAIK
                         </span>
                       </td>
                     </tr>
@@ -207,7 +207,7 @@ Mental & Fisik: ${p.mentalPhysicalAdvice}`;
                       <td className="py-2.5 px-4 flex items-center gap-2">
                         <span className="text-base">🥇</span>
                         <span className="font-bold text-amber-950 bg-amber-300/80 px-2.5 py-0.5 rounded text-[11px] border border-amber-400">
-                          EMAS / SANGAT BAIK
+                          BAIK SEKALI
                         </span>
                       </td>
                     </tr>
@@ -215,7 +215,7 @@ Mental & Fisik: ${p.mentalPhysicalAdvice}`;
                       <td className="py-2 px-3 text-center font-bold border-r border-amber-200 text-rose-800">-</td>
                       <td className="py-2 px-4 font-mono text-rose-900 border-r border-amber-200">&lt; 70 %</td>
                       <td className="py-2 px-4 text-[11px] text-rose-800 font-semibold">
-                        Di Bawah Standar Medali (Perlu Drill Latihan Eksekusi)
+                        Di Bawah Standar (Perlu Drill Latihan Eksekusi)
                       </td>
                     </tr>
                   </tbody>

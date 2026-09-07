@@ -220,7 +220,54 @@ export function calculateStatsByDistance(actions: ThrowAction[]): DistanceStatsM
 }
 
 /**
- * Tracks boule counts for active end (e.g. 6 boules per team in Triples)
+ * Informasi aturan jumlah bola petanque resmi:
+ * - Single (1 vs 1): 3 bola per atlet (total 6 bola per end)
+ * - Double (2 vs 2): 3 bola per atlet (total 12 bola per end)
+ * - Triple (3 vs 3): 2 bola per atlet (total 12 bola per end)
+ */
+export interface CategoryBouleInfo {
+  type: 'SINGLE' | 'DOUBLE' | 'TRIPLE';
+  boulesPerAthlete: number;
+  boulesPerTeam: number;
+  totalBoulesPerEnd: number;
+  label: string;
+  description: string;
+}
+
+export function getCategoryBouleInfo(category?: string, playersPerTeam?: number): CategoryBouleInfo {
+  const cat = (category || '').toUpperCase();
+  if (cat.includes('SINGLE') || playersPerTeam === 1) {
+    return {
+      type: 'SINGLE',
+      boulesPerAthlete: 3,
+      boulesPerTeam: 3,
+      totalBoulesPerEnd: 6,
+      label: 'Single (1 vs 1)',
+      description: 'Single: 3 bola per atlet (total 6 bola per end)',
+    };
+  }
+  if (cat.includes('DOUBLE') || playersPerTeam === 2) {
+    return {
+      type: 'DOUBLE',
+      boulesPerAthlete: 3,
+      boulesPerTeam: 6,
+      totalBoulesPerEnd: 12,
+      label: 'Double (2 vs 2)',
+      description: 'Double: 3 bola per atlet (total 12 bola per end)',
+    };
+  }
+  return {
+    type: 'TRIPLE',
+    boulesPerAthlete: 2,
+    boulesPerTeam: 6,
+    totalBoulesPerEnd: 12,
+    label: 'Triple (3 vs 3)',
+    description: 'Triple: 2 bola per atlet (total 12 bola per end)',
+  };
+}
+
+/**
+ * Tracks boule counts for active end (e.g. 6 boules per team in Triples, 3 in Singles)
  */
 export function calculateEndBouleCounts(
   actions: ThrowAction[],

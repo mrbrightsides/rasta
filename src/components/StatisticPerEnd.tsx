@@ -8,7 +8,6 @@ import {
   Target,
   Sparkles,
   Award,
-  TrendingUp,
   Trophy,
 } from 'lucide-react';
 
@@ -258,20 +257,6 @@ export default function StatisticPerEnd({ match }: StatisticPerEndProps) {
                     <span className="block text-[10px] text-slate-500 font-normal">
                       ({statsB.carreauCount} hit)
                     </span>
-                  </td>
-                </tr>
-
-                {/* Distance Control */}
-                <tr className="hover:bg-slate-50/50">
-                  <td className="py-3 px-4 font-bold text-slate-800 flex items-center gap-2">
-                    <TrendingUp className="w-3.5 h-3.5 text-[#002395]" />
-                    Distance Control
-                  </td>
-                  <td className="py-3 px-4 text-center font-mono font-bold text-slate-900">
-                    <span className="text-sm font-black">{statsA.distanceControlAvgCm}</span>
-                  </td>
-                  <td className="py-3 px-4 text-center font-mono font-bold text-slate-900">
-                    <span className="text-sm font-black">{statsB.distanceControlAvgCm}</span>
                   </td>
                 </tr>
 
