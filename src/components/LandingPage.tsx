@@ -17,10 +17,12 @@ import {
   Dumbbell,
   Sparkles,
 } from 'lucide-react';
-import heroBanner from '../assets/images/petanque_hero_banner_1788776407060.jpg';
-import courtGravel from '../assets/images/petanque_court_gravel_1788778401502.jpg';
-import throwPlayer from '../assets/images/petanque_throw_player_1788778420161.jpg';
-import actionShot from '../assets/images/petanque_action_shot_1788776424314.jpg';
+// Resilient public asset image paths with fallback
+// Avoids hard Rollup build failure on Vercel/CI when git repository clone lacks binary assets
+const heroBanner = '/images/hero_banner.jpg';
+const courtGravel = '/images/court_gravel.jpg';
+const throwPlayer = '/images/throw_player.jpg';
+const actionShot = '/images/action_shot.jpg';
 
 interface LandingPageProps {
   onNavigate: (tab: NavTab) => void;
@@ -36,12 +38,15 @@ export default function LandingPage({
       {/* 1. HERO SECTION WITH PETANQUE BACKGROUND */}
       <section className="relative rounded-2xl overflow-hidden shadow-xl border border-slate-200">
         {/* Background Image Container with Deep Gradient Overlay */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 bg-[#00175a]">
           <img
             src={heroBanner}
             alt="Petanque Boules and Jack on Gravel Terrain"
             className="w-full h-full object-cover object-center transform scale-105 filter brightness-90"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+            }}
           />
           {/* Deep Navy Gradient Overlay for optimal legibility */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#00175a]/95 via-[#002395]/85 to-[#00175a]/80" />
@@ -137,12 +142,15 @@ export default function LandingPage({
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Card 1: Kaidah Jumlah Bola Resmi Petanque */}
         <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-200 group flex flex-col justify-between min-h-[260px] p-6 sm:p-7 text-white">
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 bg-slate-900">
             <img
               src={courtGravel}
               alt="Bosi dan Jack di Lapangan Kerikil Petanque"
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-65"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/80 to-transparent" />
           </div>
@@ -179,12 +187,15 @@ export default function LandingPage({
 
         {/* Card 2: Presisi Teknik Melempar di Circle */}
         <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-200 group flex flex-col justify-between min-h-[260px] p-6 sm:p-7 text-white">
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 bg-slate-900">
             <img
               src={throwPlayer}
               alt="Atlet Petanque Melempar di Lingkaran Circle"
               className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-65"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.currentTarget as HTMLElement).style.display = 'none';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/80 to-transparent" />
           </div>
@@ -546,12 +557,15 @@ export default function LandingPage({
 
       {/* 6. CALL TO ACTION SECTION WITH ACTION SHOT BACKGROUND */}
       <section className="relative rounded-2xl overflow-hidden shadow-lg border border-slate-200">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 bg-slate-950">
           <img
             src={actionShot}
             alt="Petanque Player in Action Stance"
             className="w-full h-full object-cover object-center transform filter brightness-75"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.currentTarget as HTMLElement).style.display = 'none';
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-900/80 to-[#002395]/75" />
         </div>
